@@ -3,6 +3,9 @@
 
 This is an iOS Camera app which displays text next to objects.
 
+This is an iOS Camera app which displays text next to objects.
+
+
 1. Build Tensorflow data
 
 ```bash
