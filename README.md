@@ -11,3 +11,5 @@ cp ~/graphs/inception5h/* data/
 ```
 
 2. Open Up XCode
+
+3. Build and Run
