@@ -15,3 +15,5 @@ cp ~/graphs/inception5h/* data/
 3. Build and Run
 
 4. Build on Camera App
+
+<img src="screenshot.png?raw=true" />
