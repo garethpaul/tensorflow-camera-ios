@@ -1,4 +1,5 @@
 # Tensorflow Camera
+<img src="design/camera_icon.png?raw=true" width="100px" />
 
 This is an iOS Camera app which displays text next to objects.
 
@@ -16,4 +17,4 @@ cp ~/graphs/inception5h/* data/
 3. Build and Run
 4. Build on Camera App
 
-<img src="screenshot.png?raw=true" width="300px" />
+<img src="design/screenshot.png?raw=true" width="300px" />
