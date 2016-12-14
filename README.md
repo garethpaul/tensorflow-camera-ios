@@ -4,6 +4,7 @@
 2. Run on a device and point your camera at some objects
 
 ## Build Tensorflow data
+
 ```bash
 mkdir -p ~/graphs
 curl -o ~/graphs/inception5h.zip \
