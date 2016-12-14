@@ -13,3 +13,5 @@ cp ~/graphs/inception5h/* data/
 2. Open Up XCode
 
 3. Build and Run
+
+4. Build on Camera App
