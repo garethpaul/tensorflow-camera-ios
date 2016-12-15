@@ -16,8 +16,6 @@
 		591D3EDA1CFFA83A0059011C /* grace_hopper.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 591D3ED71CFFA83A0059011C /* grace_hopper.jpg */; };
 		591D3EDB1CFFA83A0059011C /* imagenet_comp_graph_label_strings.txt in Resources */ = {isa = PBXBuildFile; fileRef = 591D3ED81CFFA83A0059011C /* imagenet_comp_graph_label_strings.txt */; };
 		591D3EDC1CFFA83A0059011C /* tensorflow_inception_graph.pb in Resources */ = {isa = PBXBuildFile; fileRef = 591D3ED91CFFA83A0059011C /* tensorflow_inception_graph.pb */; };
-		591D3EDF1CFFAD230059011C /* libprotobuf-lite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 591D3EDD1CFFAD230059011C /* libprotobuf-lite.a */; };
-		591D3EE01CFFAD230059011C /* libprotobuf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 591D3EDE1CFFAD230059011C /* libprotobuf.a */; };
 		592FF8B918ECBD7600C164F8 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 592FF8B818ECBD7600C164F8 /* Foundation.framework */; };
 		592FF8BB18ECBD7600C164F8 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 592FF8BA18ECBD7600C164F8 /* CoreGraphics.framework */; };
 		592FF90218ECC66200C164F8 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 592FF90118ECC66200C164F8 /* main.mm */; };
@@ -26,6 +24,7 @@
 		592FF92618EE240200C164F8 /* CameraExampleViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 592FF92418EE240200C164F8 /* CameraExampleViewController.mm */; };
 		5993C7721D5D4E980048CE6A /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5993C7711D5D4E980048CE6A /* Accelerate.framework */; };
 		7F2879741E03003800E2672C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7F2879731E03003800E2672C /* Assets.xcassets */; };
+		C385DE321E033B34009835F8 /* lib in Frameworks */ = {isa = PBXBuildFile; fileRef = C385DE311E033B34009835F8 /* lib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,6 +55,9 @@
 		592FF92418EE240200C164F8 /* CameraExampleViewController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = CameraExampleViewController.mm; sourceTree = SOURCE_ROOT; };
 		5993C7711D5D4E980048CE6A /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS9.3.sdk/System/Library/Frameworks/Accelerate.framework; sourceTree = DEVELOPER_DIR; };
 		7F2879731E03003800E2672C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C385DE2D1E033B00009835F8 /* libprotobuf-lite.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libprotobuf-lite.a"; path = "../../../tensorflow/tensorflow/contrib/makefile/gen/protobuf_ios/lib/libprotobuf-lite.a"; sourceTree = "<group>"; };
+		C385DE2E1E033B00009835F8 /* libprotobuf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libprotobuf.a; path = ../../../tensorflow/tensorflow/contrib/makefile/gen/protobuf_ios/lib/libprotobuf.a; sourceTree = "<group>"; };
+		C385DE311E033B34009835F8 /* lib */ = {isa = PBXFileReference; lastKnownFileType = folder; name = lib; path = ../../../tensorflow/tensorflow/contrib/makefile/gen/protobuf_ios/lib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,9 +65,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C385DE321E033B34009835F8 /* lib in Frameworks */,
 				5993C7721D5D4E980048CE6A /* Accelerate.framework in Frameworks */,
-				591D3EDF1CFFAD230059011C /* libprotobuf-lite.a in Frameworks */,
-				591D3EE01CFFAD230059011C /* libprotobuf.a in Frameworks */,
 				591D3ECF1CFF7FCE0059011C /* ImageIO.framework in Frameworks */,
 				591D3ECD1CFF7F9F0059011C /* AssetsLibrary.framework in Frameworks */,
 				591D3ECB1CFF7F5F0059011C /* CoreMedia.framework in Frameworks */,
@@ -109,6 +110,9 @@
 		592FF8B718ECBD7600C164F8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C385DE311E033B34009835F8 /* lib */,
+				C385DE2D1E033B00009835F8 /* libprotobuf-lite.a */,
+				C385DE2E1E033B00009835F8 /* libprotobuf.a */,
 				5993C7711D5D4E980048CE6A /* Accelerate.framework */,
 				591D3EDD1CFFAD230059011C /* libprotobuf-lite.a */,
 				591D3EDE1CFFAD230059011C /* libprotobuf.a */,
@@ -331,17 +335,19 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/../../makefile/gen/proto",
-					"$(SRCROOT)/../../makefile/downloads/eigen",
-					"$(SRCROOT)/../../makefile/downloads",
-					"$(SRCROOT)/../../makefile/downloads/protobuf/src/",
-					"$(SRCROOT)/../../../..",
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/gen/proto,
+					/Users/gpj/workspace/tensorflow/tensorflow,
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/downloads/protobuf/src/,
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/downloads,
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/downloads/eigen,
+					"/Users/gpj/workspace/tensorflow/**",
+					"/Users/gpj/workspace/tensorflow/tensorflow/contrib/**",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.2;
 				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/../../makefile/gen/lib",
-					"$(SRCROOT)/../../makefile/gen/protobuf_ios/lib",
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/gen/protobuf_ios/lib,
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/gen/lib,
 				);
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_LDFLAGS = (
@@ -390,17 +396,19 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/../../makefile/gen/proto",
-					"$(SRCROOT)/../../makefile/downloads/eigen",
-					"$(SRCROOT)/../../makefile/downloads",
-					"$(SRCROOT)/../../makefile/downloads/protobuf/src/",
-					"$(SRCROOT)/../../../..",
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/gen/proto,
+					/Users/gpj/workspace/tensorflow/tensorflow,
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/downloads/protobuf/src/,
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/downloads,
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/downloads/eigen,
+					"/Users/gpj/workspace/tensorflow/**",
+					"/Users/gpj/workspace/tensorflow/tensorflow/contrib/**",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.2;
 				LIBRARY_SEARCH_PATHS = (
-					"$(SRCROOT)/../../makefile/gen/lib",
-					"$(SRCROOT)/../../makefile/gen/protobuf_ios/lib",
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/gen/protobuf_ios/lib,
+					/Users/gpj/workspace/tensorflow/tensorflow/contrib/makefile/gen/lib,
 				);
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_LDFLAGS = (

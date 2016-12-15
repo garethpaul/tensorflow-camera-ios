@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "57A7DF92C9CF4FB7B661E44AE238FA3B8CD634F4",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "57A7DF92C9CF4FB7B661E44AE238FA3B8CD634F4" : 9223372036854775807,
+    "DEF827AEE61008D72BA753A95234A28088662AAB" : 9223372036854775807
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "7EF5059B-6D4B-4772-9BA4-9D50A2B0ED20",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "57A7DF92C9CF4FB7B661E44AE238FA3B8CD634F4" : "tensorflow-camera-ios\/",
+    "DEF827AEE61008D72BA753A95234A28088662AAB" : "..\/tensorflow"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "tensorflow_camera",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "app\/tensorflow_camera.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:garethpaul\/tensorflow-camera-ios.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "57A7DF92C9CF4FB7B661E44AE238FA3B8CD634F4"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/tensorflow\/tensorflow.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "DEF827AEE61008D72BA753A95234A28088662AAB"
+    }
+  ]
+}
