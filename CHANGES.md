@@ -2,6 +2,7 @@
 
 ## 2026-06-08
 
+- Added `make check` as the shared repository verification alias.
 - Replaced assert-only camera setup failures with user-visible capture setup
   errors for missing devices, failed inputs, and rejected session inputs.
 - Guarded frame preprocessing against null pixel buffers, unsupported pixel
