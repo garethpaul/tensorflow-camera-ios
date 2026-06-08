@@ -71,9 +71,3 @@ When the required SDK or runtime is unavailable, use static checks and source re
 ## Contributing
 
 Keep changes small and tied to the project that is already present in this repository. For code changes, document the toolchain used, avoid committing generated dependency directories or local configuration, and update this README when setup or verification steps change.
-
-## Existing Project Notes
-
-Prior README summary:
-
-> Tensorflow Camera This is an iOS Camera app which displays text next to objects. This is an iOS Camera app which displays text next to objects. 1. Build Tensorflow data 2. Open Up XCode 3. Build and Run 4. Build on Camera App
