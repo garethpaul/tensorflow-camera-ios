@@ -1,26 +1,77 @@
-# Tensorflow Camera
+# tensorflow-camera-ios
 
-<!-- README-OVERVIEW-IMAGE -->
-![Project overview](docs/readme-overview.svg)
+## Overview
 
-<img src="design/camera_icon.png?raw=true" width="100px" />
+`garethpaul/tensorflow-camera-ios` is an Apple platform application or Swift sample. A tensorflow camera for iOS.
 
-This is an iOS Camera app which displays text next to objects.
+This README is based on the checked-in source, manifests, scripts, and repository metadata on the `master` branch. The project language mix found during review was: C++ (142), C/C++ headers (107), Objective-C (1), Objective-C++ (1).
 
-This is an iOS Camera app which displays text next to objects.
+## Repository Contents
 
-1. Build Tensorflow data
+- `README.md` - project overview and local usage notes
+- `app` - source or example code
+- `SECURITY.md` - security reporting and disclosure guidance
+- `VISION.md` - project direction and maintenance guardrails
+
+Additional scan context:
+
+- Source directories: app
+- Dependency and build manifests: none detected
+- Entry points or build surfaces: none detected
+- Test-looking files: app/common_runtime/constant_folding_test.cc, app/common_runtime/device_set_test.cc, app/common_runtime/direct_session_test.cc, app/common_runtime/direct_session_with_tracking_alloc_test.cc, app/common_runtime/function_test.cc, app/common_runtime/gpu/gpu_allocator_retry_test.cc, app/common_runtime/gpu/gpu_bfc_allocator_test.cc, app/common_runtime/gpu/gpu_debug_allocator_test.cc, and 4 more
+
+## Getting Started
+
+### Prerequisites
+
+- Git
+- macOS with Xcode for building Apple platform projects
+
+### Setup
 
 ```bash
-mkdir -p ~/graphs
-curl -o ~/graphs/inception5h.zip \
- https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip \
- && unzip ~/graphs/inception5h.zip -d ~/graphs/inception5h
-cp ~/graphs/inception5h/* data/
+git clone https://github.com/garethpaul/tensorflow-camera-ios.git
+cd tensorflow-camera-ios
 ```
 
-2. Open Up XCode
-3. Build and Run
-4. Build on Camera App
+The setup commands above are derived from repository files. Legacy mobile, Python, or JavaScript samples may require older SDKs or package versions than a modern workstation uses by default.
 
-<img src="design/screenshot.png?raw=true" width="300px" />
+## Running or Using the Project
+
+- Open the Xcode project or workspace in Xcode and run the matching app/sample scheme.
+
+## Testing and Verification
+
+- Xcode's test action or `xcodebuild test` with the appropriate scheme and destination
+
+When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
+
+## Configuration and Secrets
+
+- No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
+
+## Security and Privacy Notes
+
+- Review changes touching authentication or token handling; examples from the scan include app/CameraExampleViewController.h, app/CameraExampleViewController.mm, app/common_runtime/constant_folding.cc, app/common_runtime/costmodel_manager.h, and 6 more.
+- Review changes touching network requests, sockets, or service endpoints; examples from the scan include app/CameraExampleAppDelegate.h, app/CameraExampleAppDelegate.m, app/CameraExampleViewController.h, app/CameraExampleViewController.mm, and 6 more.
+- Review changes touching mobile permissions or privacy-sensitive device data; examples from the scan include app/CameraExampleAppDelegate.h, app/CameraExampleAppDelegate.m, app/CameraExampleViewController.h, app/CameraExampleViewController.mm, and 6 more.
+- Review changes touching file, media, JSON, XML, CSV, OCR, or data parsing; examples from the scan include app/Info.plist, app/common_runtime/gpu/gpu_device.cc, app/common_runtime/step_stats_collector.cc, app/common_runtime/sycl/sycl_device.cc, and 6 more.
+- Review changes touching shell execution, subprocess, or dynamic evaluation; examples from the scan include app/debug/debug_grpc_io_utils_test.cc, app/distributed_runtime/rpc/grpc_testlib.cc, app/distributed_runtime/rpc/grpc_testlib.h.
+- Review changes touching database, model, or persistence code; examples from the scan include app/CameraExampleViewController.mm, app/common_runtime/costmodel_manager.cc, app/common_runtime/device.h, app/common_runtime/device_set.h, and 6 more.
+
+## Maintenance Notes
+
+- This looks like an Apple platform project or sample. Xcode, Swift, CocoaPods, and deployment target versions may need to match the original project era.
+- See `SECURITY.md` for vulnerability reporting and safe research guidance.
+- See `VISION.md` for project direction and contribution guardrails.
+
+## Contributing
+
+Keep changes small and tied to the project that is already present in this repository. For code changes, document the toolchain used, avoid committing generated dependency directories or local configuration, and update this README when setup or verification steps change.
+
+## Existing Project Notes
+
+Prior README summary:
+
+> Tensorflow Camera <!-- README-OVERVIEW-IMAGE --> This is an iOS Camera app which displays text next to objects. This is an iOS Camera app which displays text next to objects. 1. Build Tensorflow data 2. Open Up XCode 3. Build and Run 4. Build on Camera App
+
