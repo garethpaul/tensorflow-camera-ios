@@ -39,7 +39,7 @@ Camera ML samples can process sensitive scenes. Inference should remain local by
 default, captures should not be stored or uploaded silently, and camera
 permissions should be obvious to users.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - Silent image upload or storage
 - Private camera captures in fixtures
