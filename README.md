@@ -55,9 +55,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - `make check` runs static project checks and camera lifecycle source checks.
   These checks cover camera permission metadata, KVO teardown, capture setup
-  crash paths, and pixel-buffer lock/unlock handling. When `xcodebuild` is
-  installed, the `build` target also attempts an iOS simulator build with code
-  signing disabled.
+  crash paths, pixel-buffer lock/unlock handling, and model output/label bounds.
+  When `xcodebuild` is installed, the `build` target also attempts an iOS
+  simulator build with code signing disabled.
 - Static project checks also require completed canonical plans under `docs/plans`.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and
   destination can be used on macOS for deeper verification.
@@ -84,6 +84,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-08-tensorflow-camera-ios-baseline.md` for the
   canonical camera lifecycle baseline.
+- See `docs/plans/2026-06-08-model-output-bounds.md` for the model output and
+  label bounds guard.
 
 ## Contributing
 

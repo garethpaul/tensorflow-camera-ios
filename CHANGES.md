@@ -2,6 +2,8 @@
 
 ## 2026-06-08
 
+- Guarded TensorFlow output and label indexing before rendering predictions,
+  with static checker coverage.
 - Added `make check` as the shared repository verification alias.
 - Replaced assert-only camera setup failures with user-visible capture setup
   errors for missing devices, failed inputs, and rejected session inputs.

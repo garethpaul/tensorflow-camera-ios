@@ -101,6 +101,16 @@ def behavior_checks():
         errors.append("frame preprocessing must handle pixel buffer lock failures")
     if "CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);" not in source:
         errors.append("frame preprocessing must unlock locked pixel buffers")
+    if "&outputs[0]" in source:
+        errors.append("model output handling must not assume outputs[0] exists")
+    if "outputs.empty()" not in source:
+        errors.append("model output handling must guard empty output tensors")
+    if "labels.empty()" not in source:
+        errors.append("model output handling must guard empty label lists")
+    if "labels[index % predictions.size()]" in source:
+        errors.append("model output handling must not index labels by prediction count modulo")
+    if "const int result_count" not in source:
+        errors.append("model output handling must bound iteration by labels and predictions")
 
     return errors
 

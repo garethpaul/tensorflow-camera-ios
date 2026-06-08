@@ -360,15 +360,23 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         {{input_layer_name, image_tensor}}, {output_layer_name}, {}, &outputs);
     if (!run_status.ok()) {
       LOG(ERROR) << "Running model failed:" << run_status;
+    } else if (outputs.empty()) {
+      LOG(ERROR) << "Running model produced no output tensors";
+    } else if (labels.empty()) {
+      LOG(ERROR) << "No labels loaded for model predictions";
     } else {
-      tensorflow::Tensor *output = &outputs[0];
+      tensorflow::Tensor *output = &outputs.front();
       auto predictions = output->flat<float>();
+      const int prediction_count = (int)predictions.size();
+      const int label_count = (int)labels.size();
+      const int result_count =
+          prediction_count < label_count ? prediction_count : label_count;
 
       NSMutableDictionary *newValues = [NSMutableDictionary dictionary];
-      for (int index = 0; index < predictions.size(); index += 1) {
+      for (int index = 0; index < result_count; index += 1) {
         const float predictionValue = predictions(index);
         if (predictionValue > 0.05f) {
-          std::string label = labels[index % predictions.size()];
+          std::string label = labels[index];
           NSString *labelObject = [NSString stringWithCString:label.c_str()];
           NSNumber *valueObject = [NSNumber numberWithFloat:predictionValue];
           [newValues setObject:valueObject forKey:labelObject];
