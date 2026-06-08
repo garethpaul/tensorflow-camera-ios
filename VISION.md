@@ -39,7 +39,6 @@ Canonical security policy and reporting:
 
 - [`SECURITY.md`](SECURITY.md)
 
-
 Camera ML samples can process sensitive scenes. Inference should remain local by
 default, captures should not be stored or uploaded silently, and camera
 permissions should be obvious to users.
