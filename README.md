@@ -1,10 +1,13 @@
 # Tensorflow Camera
+
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 <img src="design/camera_icon.png?raw=true" width="100px" />
 
 This is an iOS Camera app which displays text next to objects.
 
 This is an iOS Camera app which displays text next to objects.
-
 
 1. Build Tensorflow data
 
