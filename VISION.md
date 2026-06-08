@@ -18,6 +18,7 @@ Priority:
 - Keep model and label filenames documented
 - Make camera permission and local inference behavior clear
 - Keep no-camera and unsupported-frame cases from becoming crash-only paths
+- Keep completed maintenance plans under `docs/plans`
 - Treat Bazel, TensorFlow, and Objective-C++ setup as legacy context
 
 Next priorities:

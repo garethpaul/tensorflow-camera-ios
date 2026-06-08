@@ -12,7 +12,13 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 ## Repository Contents
 
 - `README.md` - project overview and local usage notes
+- `BUILD` - legacy TensorFlow/Bazel build metadata
+- `CHANGES.md` - maintenance history for camera lifecycle checks
+- `Makefile` - local verification entry points
 - `app` - source or example code
+- `docs/plans` - completed maintenance plans for the current baseline
+- `plans` - historical implementation notes
+- `scripts` - static iOS project and camera behavior validators
 - `SECURITY.md` - security reporting and disclosure guidance
 - `VISION.md` - project direction and maintenance guardrails
 
@@ -52,6 +58,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   crash paths, and pixel-buffer lock/unlock handling. When `xcodebuild` is
   installed, the `build` target also attempts an iOS simulator build with code
   signing disabled.
+- Static project checks also require completed canonical plans under `docs/plans`.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and
   destination can be used on macOS for deeper verification.
 
@@ -75,6 +82,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - This looks like an Apple platform project or sample. Xcode, Swift, CocoaPods, and deployment target versions may need to match the original project era.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
+- See `docs/plans/2026-06-08-tensorflow-camera-ios-baseline.md` for the
+  canonical camera lifecycle baseline.
 
 ## Contributing
 

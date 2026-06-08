@@ -15,3 +15,5 @@
   observes.
 - Added nil-reset guards around released capture resources.
 - Documented the local static verification workflow.
+- Added canonical `docs/plans` coverage and made project checks require
+  completed plans.
