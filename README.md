@@ -76,4 +76,4 @@ Keep changes small and tied to the project that is already present in this repos
 
 Prior README summary:
 
-> Tensorflow Camera <!-- README-OVERVIEW-IMAGE --> This is an iOS Camera app which displays text next to objects. This is an iOS Camera app which displays text next to objects. 1. Build Tensorflow data 2. Open Up XCode 3. Build and Run 4. Build on Camera App
+> Tensorflow Camera This is an iOS Camera app which displays text next to objects. This is an iOS Camera app which displays text next to objects. 1. Build Tensorflow data 2. Open Up XCode 3. Build and Run 4. Build on Camera App
