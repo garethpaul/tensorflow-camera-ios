@@ -122,11 +122,19 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
 
 - (void)teardownAVCapture {
   [videoDataOutput release];
-  if (videoDataOutputQueue) dispatch_release(videoDataOutputQueue);
-  [stillImageOutput removeObserver:self forKeyPath:@"isCapturingStillImage"];
-  [stillImageOutput release];
+  videoDataOutput = nil;
+  if (videoDataOutputQueue) {
+    dispatch_release(videoDataOutputQueue);
+    videoDataOutputQueue = NULL;
+  }
+  if (stillImageOutput) {
+    [stillImageOutput removeObserver:self forKeyPath:@"capturingStillImage"];
+    [stillImageOutput release];
+    stillImageOutput = nil;
+  }
   [previewLayer removeFromSuperlayer];
   [previewLayer release];
+  previewLayer = nil;
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
