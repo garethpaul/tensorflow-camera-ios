@@ -62,6 +62,26 @@ def behavior_checks():
         errors.append("still-image output must remove the same KVO key path it observes")
     if re.search(r'removeObserver:self\s+forKeyPath:@"isCapturingStillImage"', source):
         errors.append("teardown must not remove the stale isCapturingStillImage key path")
+    for fragment in (
+        "assert(error == nil)",
+        "assert(pixelBuffer != NULL)",
+        "assert(false)",
+        "assert(image_channels >= wanted_input_channels)",
+    ):
+        if fragment in source:
+            errors.append(f"camera controller must not crash with {fragment}")
+    if "showCaptureErrorWithTitle" not in source:
+        errors.append("camera setup must surface setup failures without assertions")
+    if "if (!device)" not in source:
+        errors.append("camera setup must handle missing capture devices")
+    if "if (error || !deviceInput)" not in source:
+        errors.append("camera setup must handle failed capture input creation")
+    if "Unsupported pixel format:" not in source:
+        errors.append("frame preprocessing must log unsupported pixel formats")
+    if "CVPixelBufferLockBaseAddress(pixelBuffer, 0) != kCVReturnSuccess" not in source:
+        errors.append("frame preprocessing must handle pixel buffer lock failures")
+    if "CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);" not in source:
+        errors.append("frame preprocessing must unlock locked pixel buffers")
 
     return errors
 

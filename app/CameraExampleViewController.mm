@@ -53,6 +53,16 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
 
 @implementation CameraExampleViewController
 
+- (void)showCaptureErrorWithTitle:(NSString *)title message:(NSString *)message {
+  UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title
+                                                      message:message
+                                                     delegate:nil
+                                            cancelButtonTitle:@"Dismiss"
+                                            otherButtonTitles:nil];
+  [alertView show];
+  [alertView release];
+}
+
 - (void)setupAVCapture {
   NSError *error = nil;
 
@@ -65,12 +75,35 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
 
   AVCaptureDevice *device =
       [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+  if (!device) {
+    [self showCaptureErrorWithTitle:@"Camera Unavailable"
+                            message:@"No video capture device is available."];
+    [session release];
+    session = nil;
+    return;
+  }
+
   AVCaptureDeviceInput *deviceInput =
       [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
-  assert(error == nil);
+  if (error || !deviceInput) {
+    NSString *message = error ? [error localizedDescription]
+                              : @"Could not create a camera input.";
+    [self showCaptureErrorWithTitle:@"Camera Setup Failed" message:message];
+    [session release];
+    session = nil;
+    return;
+  }
 
   isUsingFrontFacingCamera = NO;
-  if ([session canAddInput:deviceInput]) [session addInput:deviceInput];
+  if ([session canAddInput:deviceInput]) {
+    [session addInput:deviceInput];
+  } else {
+    [self showCaptureErrorWithTitle:@"Camera Setup Failed"
+                            message:@"Could not add the camera input."];
+    [session release];
+    session = nil;
+    return;
+  }
 
   stillImageOutput = [AVCaptureStillImageOutput new];
   [stillImageOutput
@@ -106,18 +139,6 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
   [session startRunning];
 
   [session release];
-  if (error) {
-    UIAlertView *alertView = [[UIAlertView alloc]
-            initWithTitle:[NSString stringWithFormat:@"Failed with error %d",
-                                                     (int)[error code]]
-                  message:[error localizedDescription]
-                 delegate:nil
-        cancelButtonTitle:@"Dismiss"
-        otherButtonTitles:nil];
-    [alertView show];
-    [alertView release];
-    [self teardownAVCapture];
-  }
 }
 
 - (void)teardownAVCapture {
@@ -268,7 +289,9 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 }
 
 - (void)runCNNOnFrame:(CVPixelBufferRef)pixelBuffer {
-  assert(pixelBuffer != NULL);
+  if (pixelBuffer == NULL) {
+    return;
+  }
 
   OSType sourcePixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
   int doReverseChannels;
@@ -277,15 +300,23 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
   } else if (kCVPixelFormatType_32BGRA == sourcePixelFormat) {
     doReverseChannels = 0;
   } else {
-    assert(false);  // Unknown source format
+    LOG(ERROR) << "Unsupported pixel format: " << sourcePixelFormat;
+    return;
   }
 
   const int sourceRowBytes = (int)CVPixelBufferGetBytesPerRow(pixelBuffer);
   const int image_width = (int)CVPixelBufferGetWidth(pixelBuffer);
   const int fullHeight = (int)CVPixelBufferGetHeight(pixelBuffer);
-  CVPixelBufferLockBaseAddress(pixelBuffer, 0);
+  if (CVPixelBufferLockBaseAddress(pixelBuffer, 0) != kCVReturnSuccess) {
+    LOG(ERROR) << "Could not lock pixel buffer base address";
+    return;
+  }
   unsigned char *sourceBaseAddr =
       (unsigned char *)(CVPixelBufferGetBaseAddress(pixelBuffer));
+  if (sourceBaseAddr == NULL) {
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+    return;
+  }
   int image_height;
   unsigned char *sourceStartAddr;
   if (fullHeight <= image_width) {
@@ -298,7 +329,10 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
   }
   const int image_channels = 4;
 
-  assert(image_channels >= wanted_input_channels);
+  if (image_channels < wanted_input_channels) {
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+    return;
+  }
   tensorflow::Tensor image_tensor(
       tensorflow::DT_FLOAT,
       tensorflow::TensorShape(
@@ -345,6 +379,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
       });
     }
   }
+  CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
 }
 
 - (void)dealloc {
