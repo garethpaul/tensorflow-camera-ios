@@ -45,3 +45,6 @@ permissions should be obvious to users.
 - Private camera captures in fixtures
 - Model asset drops without provenance
 - Broad framework rewrites without preserving the sample path
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
