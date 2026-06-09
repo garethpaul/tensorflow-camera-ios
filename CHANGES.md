@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Guarded the freeze/resume camera action when capture setup is unavailable so
+  the UI does not toggle state against a missing session.
 - Guarded still-image and video-data output setup so missing outputs or video
   connections fail closed before capture starts.
 - Released manually retained camera-controller prediction, label, and speech

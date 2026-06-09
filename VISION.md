@@ -19,6 +19,7 @@ Priority:
 - Make camera permission and local inference behavior clear
 - Keep no-camera and unsupported-frame cases from becoming crash-only paths
 - Keep still-image and video-data output setup fail-closed
+- Keep freeze/resume controls fail-closed when capture setup is unavailable
 - Keep front/back camera switching fail-closed when replacement inputs fail
 - Keep camera frame preprocessing faithful to source coordinates and row stride
 - Keep model outputs and labels bounded before rendering predictions
@@ -57,6 +58,7 @@ permissions should be obvious to users.
 - Silent image upload or storage
 - Private camera captures in fixtures
 - Unguarded camera input replacement during front/back switching
+- Freeze/resume UI changes against a missing capture session
 - Model asset drops without provenance
 - Fatal bundle-resource lookups for optional model paths
 - Broad framework rewrites without preserving the sample path

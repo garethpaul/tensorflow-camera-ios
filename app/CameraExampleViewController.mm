@@ -234,6 +234,12 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
 }
 
 - (IBAction)takePicture:(id)sender {
+  if (!session) {
+    [self showCaptureErrorWithTitle:@"Camera Unavailable"
+                            message:@"Camera capture is not available."];
+    return;
+  }
+
   if ([session isRunning]) {
     [session stopRunning];
     [sender setTitle:@"Continue" forState:UIControlStateNormal];

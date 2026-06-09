@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS_PLANS = ROOT / "docs" / "plans"
 CANONICAL_PLAN = DOCS_PLANS / "2026-06-08-tensorflow-camera-ios-baseline.md"
 CAMERA_OUTPUT_PLAN = DOCS_PLANS / "2026-06-09-camera-output-guard.md"
+TAKE_PICTURE_SESSION_PLAN = DOCS_PLANS / "2026-06-09-take-picture-session-guard.md"
 
 
 def read_text(relative_path):
@@ -36,6 +37,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-08-tensorflow-camera-ios-baseline.md is missing")
     if not CAMERA_OUTPUT_PLAN.exists():
         errors.append("docs/plans/2026-06-09-camera-output-guard.md is missing")
+    if not TAKE_PICTURE_SESSION_PLAN.exists():
+        errors.append("docs/plans/2026-06-09-take-picture-session-guard.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -117,6 +120,10 @@ def behavior_checks():
         errors.append("camera switching must guard the active preview capture session")
     if "if (!captureSession)" not in source:
         errors.append("camera switching must handle missing capture sessions")
+    if "if (!session)" not in source:
+        errors.append("camera freeze/resume action must handle missing capture sessions")
+    if 'message:@"Camera capture is not available."' not in source:
+        errors.append("camera freeze/resume action must surface missing capture sessions")
     if "deviceInputWithDevice:d error:nil" in source:
         errors.append("camera switching must not ignore capture input creation errors")
     if "if (error || !input)" not in source:
