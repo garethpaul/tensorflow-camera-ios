@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Guarded front/back camera switching against missing sessions, failed input
+  creation, and rejected replacement inputs.
 - Corrected frame preprocessing source coordinate mapping and row-stride usage
   before feeding camera pixels into TensorFlow.
 - Extended static behavior checks to preserve resize-loop `x`/`y` mapping and

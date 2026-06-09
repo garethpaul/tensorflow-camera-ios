@@ -398,25 +398,57 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 
 // use front/back camera
 - (IBAction)switchCameras:(id)sender {
+  AVCaptureSession *captureSession = [previewLayer session];
+  if (!captureSession) {
+    [self showCaptureErrorWithTitle:@"Camera Unavailable"
+                            message:@"Camera capture is not running."];
+    return;
+  }
+
   AVCaptureDevicePosition desiredPosition;
   if (isUsingFrontFacingCamera)
     desiredPosition = AVCaptureDevicePositionBack;
   else
     desiredPosition = AVCaptureDevicePositionFront;
 
+  BOOL didSwitchCamera = NO;
   for (AVCaptureDevice *d in
        [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
     if ([d position] == desiredPosition) {
-      [[previewLayer session] beginConfiguration];
+      NSError *error = nil;
       AVCaptureDeviceInput *input =
-          [AVCaptureDeviceInput deviceInputWithDevice:d error:nil];
-      for (AVCaptureInput *oldInput in [[previewLayer session] inputs]) {
-        [[previewLayer session] removeInput:oldInput];
+          [AVCaptureDeviceInput deviceInputWithDevice:d error:&error];
+      if (error || !input) {
+        NSString *message = error ? [error localizedDescription]
+                                  : @"Could not create a camera input.";
+        [self showCaptureErrorWithTitle:@"Camera Switch Failed"
+                                message:message];
+        return;
       }
-      [[previewLayer session] addInput:input];
-      [[previewLayer session] commitConfiguration];
+
+      NSArray *oldInputs = [NSArray arrayWithArray:[captureSession inputs]];
+      [captureSession beginConfiguration];
+      for (AVCaptureInput *oldInput in oldInputs) {
+        [captureSession removeInput:oldInput];
+      }
+      if ([captureSession canAddInput:input]) {
+        [captureSession addInput:input];
+        didSwitchCamera = YES;
+      } else {
+        for (AVCaptureInput *oldInput in oldInputs) {
+          if ([captureSession canAddInput:oldInput]) {
+            [captureSession addInput:oldInput];
+          }
+        }
+      }
+      [captureSession commitConfiguration];
       break;
     }
+  }
+  if (!didSwitchCamera) {
+    [self showCaptureErrorWithTitle:@"Camera Switch Failed"
+                            message:@"Requested camera is not available."];
+    return;
   }
   isUsingFrontFacingCamera = !isUsingFrontFacingCamera;
 }

@@ -96,6 +96,22 @@ def behavior_checks():
         errors.append("camera setup must handle missing capture devices")
     if "if (error || !deviceInput)" not in source:
         errors.append("camera setup must handle failed capture input creation")
+    if "AVCaptureSession *captureSession = [previewLayer session];" not in source:
+        errors.append("camera switching must guard the active preview capture session")
+    if "if (!captureSession)" not in source:
+        errors.append("camera switching must handle missing capture sessions")
+    if "deviceInputWithDevice:d error:nil" in source:
+        errors.append("camera switching must not ignore capture input creation errors")
+    if "if (error || !input)" not in source:
+        errors.append("camera switching must handle failed replacement input creation")
+    if "BOOL didSwitchCamera = NO;" not in source or "if (!didSwitchCamera)" not in source:
+        errors.append("camera switching must only toggle state after a successful switch")
+    if "NSArray *oldInputs = [NSArray arrayWithArray:[captureSession inputs]];" not in source:
+        errors.append("camera switching must preserve old inputs while reconfiguring")
+    if "[captureSession canAddInput:input]" not in source:
+        errors.append("camera switching must verify the replacement input can be added")
+    if "[[previewLayer session] addInput:input]" in source:
+        errors.append("camera switching must not add replacement inputs without guard checks")
     if "Unsupported pixel format:" not in source:
         errors.append("frame preprocessing must log unsupported pixel formats")
     if "CVPixelBufferLockBaseAddress(pixelBuffer, 0) != kCVReturnSuccess" not in source:

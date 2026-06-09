@@ -18,6 +18,7 @@ Priority:
 - Keep model and label filenames documented
 - Make camera permission and local inference behavior clear
 - Keep no-camera and unsupported-frame cases from becoming crash-only paths
+- Keep front/back camera switching fail-closed when replacement inputs fail
 - Keep camera frame preprocessing faithful to source coordinates and row stride
 - Keep model outputs and labels bounded before rendering predictions
 - Keep missing model or label assets user-visible instead of fatal
@@ -53,6 +54,7 @@ permissions should be obvious to users.
 
 - Silent image upload or storage
 - Private camera captures in fixtures
+- Unguarded camera input replacement during front/back switching
 - Model asset drops without provenance
 - Fatal bundle-resource lookups for optional model paths
 - Broad framework rewrites without preserving the sample path
