@@ -25,6 +25,7 @@ Priority:
 - Keep model outputs and labels bounded before rendering predictions
 - Keep missing model or label assets user-visible instead of fatal
 - Keep shared bundle-resource lookup non-fatal for model paths
+- Keep label file loading fail-closed before prediction rendering
 - Keep manually retained camera-controller state released during teardown
 - Keep completed maintenance plans under `docs/plans`
 - Treat Bazel, TensorFlow, and Objective-C++ setup as legacy context

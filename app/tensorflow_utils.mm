@@ -227,10 +227,15 @@ tensorflow::Status LoadLabels(NSString* file_name, NSString* file_type,
   }
   std::ifstream t;
   t.open([labels_path UTF8String]);
+  if (!t.is_open()) {
+    LOG(ERROR) << "Failed to open labels file at " << [labels_path UTF8String];
+    return tensorflow::errors::NotFound([labels_path UTF8String]);
+  }
   std::string line;
-  while (t) {
-    std::getline(t, line);
-    label_strings->push_back(line);
+  while (std::getline(t, line)) {
+    if (!line.empty()) {
+      label_strings->push_back(line);
+    }
   }
   t.close();
   return tensorflow::Status::OK();

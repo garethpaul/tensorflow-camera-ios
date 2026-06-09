@@ -10,6 +10,7 @@ DOCS_PLANS = ROOT / "docs" / "plans"
 CANONICAL_PLAN = DOCS_PLANS / "2026-06-08-tensorflow-camera-ios-baseline.md"
 CAMERA_OUTPUT_PLAN = DOCS_PLANS / "2026-06-09-camera-output-guard.md"
 TAKE_PICTURE_SESSION_PLAN = DOCS_PLANS / "2026-06-09-take-picture-session-guard.md"
+LABEL_LOAD_PLAN = DOCS_PLANS / "2026-06-09-label-load-guard.md"
 
 
 def read_text(relative_path):
@@ -39,6 +40,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-09-camera-output-guard.md is missing")
     if not TAKE_PICTURE_SESSION_PLAN.exists():
         errors.append("docs/plans/2026-06-09-take-picture-session-guard.md is missing")
+    if not LABEL_LOAD_PLAN.exists():
+        errors.append("docs/plans/2026-06-09-label-load-guard.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -180,6 +183,14 @@ def behavior_checks():
         errors.append("missing bundle resources must be logged as non-fatal errors")
     if "if (!network_path)" not in utils_source:
         errors.append("memory-mapped model loading must guard missing bundle resources")
+    if "if (!t.is_open())" not in utils_source:
+        errors.append("label loading must fail when the labels file cannot be opened")
+    if "Failed to open labels file" not in utils_source:
+        errors.append("label loading must log failed labels file opens")
+    if "while (std::getline(t, line))" not in utils_source:
+        errors.append("label loading must iterate over successfully read lines")
+    if "if (!line.empty())" not in utils_source:
+        errors.append("label loading must skip empty labels")
 
     return errors
 

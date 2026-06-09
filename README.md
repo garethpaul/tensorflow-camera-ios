@@ -62,7 +62,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Frame preprocessing checks also preserve source `x`/`y` coordinate mapping
   and `CVPixelBuffer` row-stride addressing. The checks guard missing model or
   label assets from becoming fatal launch crashes, including the shared
-  bundle-resource lookup used by plain and memory-mapped model loading. They
+  bundle-resource lookup used by plain and memory-mapped model loading. Label
+  loading also fails early when the labels file cannot be opened and skips empty
+  label lines before prediction rendering. They
   also preserve manual cleanup of controller-owned prediction and speech state.
   When
   `xcodebuild` is installed, the `build` target also attempts an iOS simulator
@@ -99,6 +101,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   asset error guard.
 - See `docs/plans/2026-06-09-nonfatal-resource-lookup.md` for the shared
   bundle-resource lookup guard.
+- See `docs/plans/2026-06-09-label-load-guard.md` for the label file open and
+  empty-label guard.
 - See `docs/plans/2026-06-09-frame-preprocessing-stride.md` for the camera
   frame coordinate and row-stride guard.
 - See `docs/plans/2026-06-09-camera-switch-guard.md` for the front/back camera

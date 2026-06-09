@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Made label loading fail when the labels file cannot be opened and skip empty
+  label lines before prediction rendering, with static validation.
 - Guarded the freeze/resume camera action when capture setup is unavailable so
   the UI does not toggle state against a missing session.
 - Guarded still-image and video-data output setup so missing outputs or video
