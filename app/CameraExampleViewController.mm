@@ -63,6 +63,23 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
   [alertView release];
 }
 
+- (void)failCameraSetupWithMessage:(NSString *)message {
+  [self showCaptureErrorWithTitle:@"Camera Setup Failed" message:message];
+  if (stillImageOutput) {
+    [stillImageOutput removeObserver:self forKeyPath:@"capturingStillImage"];
+    [stillImageOutput release];
+    stillImageOutput = nil;
+  }
+  [videoDataOutput release];
+  videoDataOutput = nil;
+  if (videoDataOutputQueue) {
+    dispatch_release(videoDataOutputQueue);
+    videoDataOutputQueue = NULL;
+  }
+  [session release];
+  session = nil;
+}
+
 - (void)setupAVCapture {
   NSError *error = nil;
 
@@ -111,8 +128,12 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
        forKeyPath:@"capturingStillImage"
           options:NSKeyValueObservingOptionNew
           context:(void *)(AVCaptureStillImageIsCapturingStillImageContext)];
-  if ([session canAddOutput:stillImageOutput])
+  if ([session canAddOutput:stillImageOutput]) {
     [session addOutput:stillImageOutput];
+  } else {
+    [self failCameraSetupWithMessage:@"Could not add the still image output."];
+    return;
+  }
 
   videoDataOutput = [AVCaptureVideoDataOutput new];
 
@@ -125,9 +146,19 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
       dispatch_queue_create("VideoDataOutputQueue", DISPATCH_QUEUE_SERIAL);
   [videoDataOutput setSampleBufferDelegate:self queue:videoDataOutputQueue];
 
-  if ([session canAddOutput:videoDataOutput])
+  if ([session canAddOutput:videoDataOutput]) {
     [session addOutput:videoDataOutput];
-  [[videoDataOutput connectionWithMediaType:AVMediaTypeVideo] setEnabled:YES];
+  } else {
+    [self failCameraSetupWithMessage:@"Could not add the video data output."];
+    return;
+  }
+  AVCaptureConnection *videoConnection =
+      [videoDataOutput connectionWithMediaType:AVMediaTypeVideo];
+  if (!videoConnection) {
+    [self failCameraSetupWithMessage:@"Could not create a video data connection."];
+    return;
+  }
+  [videoConnection setEnabled:YES];
 
   previewLayer = [[AVCaptureVideoPreviewLayer alloc] initWithSession:session];
   [previewLayer setBackgroundColor:[[UIColor blackColor] CGColor]];

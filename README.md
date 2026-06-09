@@ -56,7 +56,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make check` runs static project checks and camera lifecycle source checks.
   These checks cover camera permission metadata, KVO teardown, capture setup
   crash paths, guarded camera switching, pixel-buffer lock/unlock handling, and
-  model output/label bounds.
+  model output/label bounds. They also require still-image and video-data
+  output setup failures to fail closed before capture starts.
   Frame preprocessing checks also preserve source `x`/`y` coordinate mapping
   and `CVPixelBuffer` row-stride addressing. The checks guard missing model or
   label assets from becoming fatal launch crashes, including the shared
@@ -103,6 +104,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   switch guard.
 - See `docs/plans/2026-06-09-camera-controller-retained-state.md` for the
   retained controller state cleanup guard.
+- See `docs/plans/2026-06-09-camera-output-guard.md` for the still/video output
+  setup guard.
 
 ## Contributing
 

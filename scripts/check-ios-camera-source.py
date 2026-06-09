@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DOCS_PLANS = ROOT / "docs" / "plans"
 CANONICAL_PLAN = DOCS_PLANS / "2026-06-08-tensorflow-camera-ios-baseline.md"
+CAMERA_OUTPUT_PLAN = DOCS_PLANS / "2026-06-09-camera-output-guard.md"
 
 
 def read_text(relative_path):
@@ -33,6 +34,8 @@ def docs_plan_checks():
     errors = []
     if not CANONICAL_PLAN.exists():
         errors.append("docs/plans/2026-06-08-tensorflow-camera-ios-baseline.md is missing")
+    if not CAMERA_OUTPUT_PLAN.exists():
+        errors.append("docs/plans/2026-06-09-camera-output-guard.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -96,6 +99,20 @@ def behavior_checks():
         errors.append("camera setup must handle missing capture devices")
     if "if (error || !deviceInput)" not in source:
         errors.append("camera setup must handle failed capture input creation")
+    if "- (void)failCameraSetupWithMessage:(NSString *)message" not in source:
+        errors.append("camera setup must centralize output failure cleanup")
+    if 'Could not add the still image output.' not in source:
+        errors.append("camera setup must fail closed when still image output cannot be added")
+    if 'Could not add the video data output.' not in source:
+        errors.append("camera setup must fail closed when video data output cannot be added")
+    if 'AVCaptureConnection *videoConnection =\n      [videoDataOutput connectionWithMediaType:AVMediaTypeVideo];' not in source:
+        errors.append("camera setup must store the video data connection before enabling it")
+    if 'if (!videoConnection)' not in source:
+        errors.append("camera setup must handle missing video data connections")
+    if 'Could not create a video data connection.' not in source:
+        errors.append("camera setup must show an error for missing video data connections")
+    if '[[videoDataOutput connectionWithMediaType:AVMediaTypeVideo] setEnabled:YES]' in source:
+        errors.append("camera setup must not enable an unchecked video data connection")
     if "AVCaptureSession *captureSession = [previewLayer session];" not in source:
         errors.append("camera switching must guard the active preview capture session")
     if "if (!captureSession)" not in source:

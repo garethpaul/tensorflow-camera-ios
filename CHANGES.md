@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Guarded still-image and video-data output setup so missing outputs or video
+  connections fail closed before capture starts.
 - Released manually retained camera-controller prediction, label, and speech
   state during teardown and guarded the cleanup path statically.
 - Guarded front/back camera switching against missing sessions, failed input

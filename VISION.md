@@ -18,6 +18,7 @@ Priority:
 - Keep model and label filenames documented
 - Make camera permission and local inference behavior clear
 - Keep no-camera and unsupported-frame cases from becoming crash-only paths
+- Keep still-image and video-data output setup fail-closed
 - Keep front/back camera switching fail-closed when replacement inputs fail
 - Keep camera frame preprocessing faithful to source coordinates and row stride
 - Keep model outputs and labels bounded before rendering predictions
