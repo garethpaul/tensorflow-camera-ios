@@ -60,7 +60,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Frame preprocessing checks also preserve source `x`/`y` coordinate mapping
   and `CVPixelBuffer` row-stride addressing. The checks guard missing model or
   label assets from becoming fatal launch crashes, including the shared
-  bundle-resource lookup used by plain and memory-mapped model loading. When
+  bundle-resource lookup used by plain and memory-mapped model loading. They
+  also preserve manual cleanup of controller-owned prediction and speech state.
+  When
   `xcodebuild` is installed, the `build` target also attempts an iOS simulator
   build with code signing disabled.
 - Static project checks also require completed canonical plans under `docs/plans`.
@@ -99,6 +101,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   frame coordinate and row-stride guard.
 - See `docs/plans/2026-06-09-camera-switch-guard.md` for the front/back camera
   switch guard.
+- See `docs/plans/2026-06-09-camera-controller-retained-state.md` for the
+  retained controller state cleanup guard.
 
 ## Contributing
 

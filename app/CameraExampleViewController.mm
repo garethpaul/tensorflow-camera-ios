@@ -393,6 +393,9 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 - (void)dealloc {
   [self teardownAVCapture];
   [square release];
+  [synth release];
+  [labelLayers release];
+  [oldPredictionValues release];
   [super dealloc];
 }
 
@@ -492,6 +495,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 - (void)viewDidUnload {
   [super viewDidUnload];
   [oldPredictionValues release];
+  oldPredictionValues = nil;
 }
 
 - (void)viewWillAppear:(BOOL)animated {

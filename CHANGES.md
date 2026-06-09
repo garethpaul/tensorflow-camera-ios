@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Released manually retained camera-controller prediction, label, and speech
+  state during teardown and guarded the cleanup path statically.
 - Guarded front/back camera switching against missing sessions, failed input
   creation, and rejected replacement inputs.
 - Corrected frame preprocessing source coordinate mapping and row-stride usage

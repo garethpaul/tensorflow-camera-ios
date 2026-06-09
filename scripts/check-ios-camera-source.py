@@ -142,6 +142,14 @@ def behavior_checks():
         errors.append("model load failures must show a user-visible error")
     if 'showCaptureErrorWithTitle:@"Labels Unavailable"' not in source:
         errors.append("label load failures must show a user-visible error")
+    if "[synth release];" not in source:
+        errors.append("camera controller must release the retained speech synthesizer")
+    if "[labelLayers release];" not in source:
+        errors.append("camera controller must release retained prediction label layers")
+    if "[square release];\n  [synth release];\n  [labelLayers release];\n  [oldPredictionValues release];" not in source:
+        errors.append("camera controller dealloc must release retained prediction values")
+    if "oldPredictionValues = nil;" not in source:
+        errors.append("viewDidUnload must nil out released prediction values")
     if "LOG(FATAL)" in utils_source:
         errors.append("TensorFlow utility resource lookups must not use LOG(FATAL)")
     if "LOG(ERROR) << \"Couldn't find '\"" not in utils_source:
