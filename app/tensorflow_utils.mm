@@ -111,7 +111,7 @@ NSString* FilePathForResourceName(NSString* name, NSString* extension) {
   NSString* file_path =
       [[NSBundle mainBundle] pathForResource:name ofType:extension];
   if (file_path == NULL) {
-    LOG(FATAL) << "Couldn't find '" << [name UTF8String] << "."
+    LOG(ERROR) << "Couldn't find '" << [name UTF8String] << "."
                << [extension UTF8String] << "' in bundle.";
     return nullptr;
   }
@@ -161,6 +161,12 @@ tensorflow::Status LoadMemoryMappedModel(
     std::unique_ptr<tensorflow::Session>* session,
     std::unique_ptr<tensorflow::MemmappedEnv>* memmapped_env) {
   NSString* network_path = FilePathForResourceName(file_name, file_type);
+  if (!network_path) {
+    LOG(ERROR) << "Failed to find memory-mapped model at"
+               << [file_name UTF8String] << [file_type UTF8String];
+    return tensorflow::errors::NotFound([file_name UTF8String],
+                                        [file_type UTF8String]);
+  }
   memmapped_env->reset(
       new tensorflow::MemmappedEnv(tensorflow::Env::Default()));
   tensorflow::Status mmap_status =

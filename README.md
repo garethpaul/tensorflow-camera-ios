@@ -57,8 +57,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   These checks cover camera permission metadata, KVO teardown, capture setup
   crash paths, pixel-buffer lock/unlock handling, and model output/label bounds.
   They also guard missing model or label assets from becoming fatal launch
-  crashes. When `xcodebuild` is installed, the `build` target also attempts an
-  iOS simulator build with code signing disabled.
+  crashes, including the shared bundle-resource lookup used by plain and
+  memory-mapped model loading. When `xcodebuild` is installed, the `build`
+  target also attempts an iOS simulator build with code signing disabled.
 - Static project checks also require completed canonical plans under `docs/plans`.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and
   destination can be used on macOS for deeper verification.
@@ -89,6 +90,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   label bounds guard.
 - See `docs/plans/2026-06-08-model-load-errors.md` for the missing model/label
   asset error guard.
+- See `docs/plans/2026-06-09-nonfatal-resource-lookup.md` for the shared
+  bundle-resource lookup guard.
 
 ## Contributing
 

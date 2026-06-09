@@ -20,6 +20,7 @@ Priority:
 - Keep no-camera and unsupported-frame cases from becoming crash-only paths
 - Keep model outputs and labels bounded before rendering predictions
 - Keep missing model or label assets user-visible instead of fatal
+- Keep shared bundle-resource lookup non-fatal for model paths
 - Keep completed maintenance plans under `docs/plans`
 - Treat Bazel, TensorFlow, and Objective-C++ setup as legacy context
 
@@ -52,6 +53,7 @@ permissions should be obvious to users.
 - Silent image upload or storage
 - Private camera captures in fixtures
 - Model asset drops without provenance
+- Fatal bundle-resource lookups for optional model paths
 - Broad framework rewrites without preserving the sample path
 
 This list is a roadmap guardrail, not a permanent rule.

@@ -73,6 +73,7 @@ def behavior_checks():
         return errors
 
     source = read_text("app/CameraExampleViewController.mm")
+    utils_source = read_text("app/tensorflow_utils.mm")
     if "AVCaptureStillImageIsCapturingStillImageContext" not in source:
         errors.append("still-image KVO context is missing")
     if 'forKeyPath:@"capturingStillImage"' not in source:
@@ -119,6 +120,12 @@ def behavior_checks():
         errors.append("model load failures must show a user-visible error")
     if 'showCaptureErrorWithTitle:@"Labels Unavailable"' not in source:
         errors.append("label load failures must show a user-visible error")
+    if "LOG(FATAL)" in utils_source:
+        errors.append("TensorFlow utility resource lookups must not use LOG(FATAL)")
+    if "LOG(ERROR) << \"Couldn't find '\"" not in utils_source:
+        errors.append("missing bundle resources must be logged as non-fatal errors")
+    if "if (!network_path)" not in utils_source:
+        errors.append("memory-mapped model loading must guard missing bundle resources")
 
     return errors
 

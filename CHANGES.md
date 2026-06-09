@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-06-09
+
+- Replaced fatal bundle-resource lookup logging in TensorFlow utilities with
+  non-fatal error logging.
+- Added a missing-resource guard for memory-mapped model loading.
+- Extended static behavior checks to preserve non-fatal model resource lookup.
+
 ## 2026-06-08
 
 - Replaced fatal model and label load failures with user-visible errors and
