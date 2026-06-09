@@ -343,10 +343,10 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
   for (int y = 0; y < wanted_input_height; ++y) {
     float *out_row = out + (y * wanted_input_width * wanted_input_channels);
     for (int x = 0; x < wanted_input_width; ++x) {
-      const int in_x = (y * image_width) / wanted_input_width;
-      const int in_y = (x * image_height) / wanted_input_height;
+      const int in_x = (x * image_width) / wanted_input_width;
+      const int in_y = (y * image_height) / wanted_input_height;
       tensorflow::uint8 *in_pixel =
-          in + (in_y * image_width * image_channels) + (in_x * image_channels);
+          in + (in_y * sourceRowBytes) + (in_x * image_channels);
       float *out_pixel = out_row + (x * wanted_input_channels);
       for (int c = 0; c < wanted_input_channels; ++c) {
         out_pixel[c] = (in_pixel[c] - input_mean) / input_std;

@@ -2,6 +2,10 @@
 
 ## 2026-06-09
 
+- Corrected frame preprocessing source coordinate mapping and row-stride usage
+  before feeding camera pixels into TensorFlow.
+- Extended static behavior checks to preserve resize-loop `x`/`y` mapping and
+  `CVPixelBuffer` row-byte addressing.
 - Replaced fatal bundle-resource lookup logging in TensorFlow utilities with
   non-fatal error logging.
 - Added a missing-resource guard for memory-mapped model loading.

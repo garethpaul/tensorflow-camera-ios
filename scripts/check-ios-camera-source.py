@@ -102,6 +102,12 @@ def behavior_checks():
         errors.append("frame preprocessing must handle pixel buffer lock failures")
     if "CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);" not in source:
         errors.append("frame preprocessing must unlock locked pixel buffers")
+    if "const int in_x = (x * image_width) / wanted_input_width;" not in source:
+        errors.append("frame preprocessing must derive source x coordinates from output x")
+    if "const int in_y = (y * image_height) / wanted_input_height;" not in source:
+        errors.append("frame preprocessing must derive source y coordinates from output y")
+    if "in + (in_y * sourceRowBytes) + (in_x * image_channels)" not in source:
+        errors.append("frame preprocessing must use CVPixelBuffer row bytes for source rows")
     if "&outputs[0]" in source:
         errors.append("model output handling must not assume outputs[0] exists")
     if "outputs.empty()" not in source:

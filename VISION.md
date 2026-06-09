@@ -18,6 +18,7 @@ Priority:
 - Keep model and label filenames documented
 - Make camera permission and local inference behavior clear
 - Keep no-camera and unsupported-frame cases from becoming crash-only paths
+- Keep camera frame preprocessing faithful to source coordinates and row stride
 - Keep model outputs and labels bounded before rendering predictions
 - Keep missing model or label assets user-visible instead of fatal
 - Keep shared bundle-resource lookup non-fatal for model paths
