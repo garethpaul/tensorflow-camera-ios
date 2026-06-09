@@ -2,6 +2,9 @@
 
 ## 2026-06-08
 
+- Replaced fatal model and label load failures with user-visible errors and
+  static checker coverage.
+- Ignored Python bytecode caches produced by local checker syntax validation.
 - Guarded TensorFlow output and label indexing before rendering predictions,
   with static checker coverage.
 - Added `make check` as the shared repository verification alias.

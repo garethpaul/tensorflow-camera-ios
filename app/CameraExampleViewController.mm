@@ -440,13 +440,19 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     load_status = LoadModel(model_file_name, model_file_type, &tf_session);
   }
   if (!load_status.ok()) {
-    LOG(FATAL) << "Couldn't load model: " << load_status;
+    LOG(ERROR) << "Couldn't load model: " << load_status;
+    [self showCaptureErrorWithTitle:@"Model Unavailable"
+                            message:@"The TensorFlow model could not be loaded."];
+    return;
   }
 
   tensorflow::Status labels_status =
       LoadLabels(labels_file_name, labels_file_type, &labels);
   if (!labels_status.ok()) {
-    LOG(FATAL) << "Couldn't load labels: " << labels_status;
+    LOG(ERROR) << "Couldn't load labels: " << labels_status;
+    [self showCaptureErrorWithTitle:@"Labels Unavailable"
+                            message:@"The TensorFlow labels file could not be loaded."];
+    return;
   }
   [self setupAVCapture];
 }

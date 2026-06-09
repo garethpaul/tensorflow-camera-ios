@@ -111,6 +111,14 @@ def behavior_checks():
         errors.append("model output handling must not index labels by prediction count modulo")
     if "const int result_count" not in source:
         errors.append("model output handling must bound iteration by labels and predictions")
+    if 'LOG(FATAL) << "Couldn\'t load model' in source:
+        errors.append("model load failures must not crash with LOG(FATAL)")
+    if 'LOG(FATAL) << "Couldn\'t load labels' in source:
+        errors.append("label load failures must not crash with LOG(FATAL)")
+    if 'showCaptureErrorWithTitle:@"Model Unavailable"' not in source:
+        errors.append("model load failures must show a user-visible error")
+    if 'showCaptureErrorWithTitle:@"Labels Unavailable"' not in source:
+        errors.append("label load failures must show a user-visible error")
 
     return errors
 
