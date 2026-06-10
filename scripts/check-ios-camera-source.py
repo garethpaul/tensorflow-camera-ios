@@ -14,6 +14,7 @@ TAKE_PICTURE_SESSION_PLAN = DOCS_PLANS / "2026-06-09-take-picture-session-guard.
 LABEL_LOAD_PLAN = DOCS_PLANS / "2026-06-09-label-load-guard.md"
 CI_PLAN = DOCS_PLANS / "2026-06-10-ci-baseline.md"
 RESOURCE_PLAN = DOCS_PLANS / "2026-06-10-model-resource-integrity.md"
+CAPTURE_TEARDOWN_PLAN = DOCS_PLANS / "2026-06-10-capture-teardown-order.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -56,6 +57,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-10-ci-baseline.md is missing")
     if not RESOURCE_PLAN.exists():
         errors.append("docs/plans/2026-06-10-model-resource-integrity.md is missing")
+    if not CAPTURE_TEARDOWN_PLAN.exists():
+        errors.append("docs/plans/2026-06-10-capture-teardown-order.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -156,6 +159,26 @@ def behavior_checks():
 
     source = read_text("app/CameraExampleViewController.mm")
     utils_source = read_text("app/tensorflow_utils.mm")
+    teardown_match = re.search(r"- \(void\)teardownAVCapture \{(.*?)\n\}", source, re.DOTALL)
+    if not teardown_match:
+        errors.append("camera controller teardown method is missing")
+    else:
+        teardown = teardown_match.group(1)
+        teardown_contract = (
+            "[session stopRunning];",
+            "[videoDataOutput setSampleBufferDelegate:nil queue:NULL];",
+            "[videoDataOutput release];",
+            "dispatch_release(videoDataOutputQueue);",
+            "[previewLayer release];",
+            "session = nil;",
+        )
+        positions = [teardown.find(fragment) for fragment in teardown_contract]
+        if any(position < 0 for position in positions):
+            errors.append("camera teardown must stop capture, detach callbacks, release resources, and clear session")
+        elif positions != sorted(positions):
+            errors.append("camera teardown must release capture resources in lifecycle order")
+    if source.count("[videoDataOutput setSampleBufferDelegate:nil queue:NULL];") < 2:
+        errors.append("camera setup failure and teardown must both detach the video sample delegate")
     if "AVCaptureStillImageIsCapturingStillImageContext" not in source:
         errors.append("still-image KVO context is missing")
     if 'forKeyPath:@"capturingStillImage"' not in source:

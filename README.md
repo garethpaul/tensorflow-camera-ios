@@ -60,6 +60,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   model output/label bounds. They also require still-image and video-data
   output setup failures to fail closed before capture starts, and freeze/resume
   actions to fail closed when capture setup is unavailable.
+  Capture teardown checks require the session to stop and the sample delegate
+  to detach before queue release, then clear the borrowed session pointer.
   Frame preprocessing checks also preserve source `x`/`y` coordinate mapping
   and `CVPixelBuffer` row-stride addressing. The checks guard missing model or
   label assets from becoming fatal launch crashes, including the shared
@@ -126,6 +128,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   contract gate.
 - See `docs/plans/2026-06-10-model-resource-integrity.md` for model, label, and
   sample-image integrity verification.
+- See `docs/plans/2026-06-10-capture-teardown-order.md` for ordered capture
+  callback shutdown and session pointer cleanup.
 
 ## Contributing
 

@@ -70,8 +70,11 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
     [stillImageOutput release];
     stillImageOutput = nil;
   }
-  [videoDataOutput release];
-  videoDataOutput = nil;
+  if (videoDataOutput) {
+    [videoDataOutput setSampleBufferDelegate:nil queue:NULL];
+    [videoDataOutput release];
+    videoDataOutput = nil;
+  }
   if (videoDataOutputQueue) {
     dispatch_release(videoDataOutputQueue);
     videoDataOutputQueue = NULL;
@@ -173,8 +176,14 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
 }
 
 - (void)teardownAVCapture {
-  [videoDataOutput release];
-  videoDataOutput = nil;
+  if (session && [session isRunning]) {
+    [session stopRunning];
+  }
+  if (videoDataOutput) {
+    [videoDataOutput setSampleBufferDelegate:nil queue:NULL];
+    [videoDataOutput release];
+    videoDataOutput = nil;
+  }
   if (videoDataOutputQueue) {
     dispatch_release(videoDataOutputQueue);
     videoDataOutputQueue = NULL;
@@ -187,6 +196,7 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
   [previewLayer removeFromSuperlayer];
   [previewLayer release];
   previewLayer = nil;
+  session = nil;
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath

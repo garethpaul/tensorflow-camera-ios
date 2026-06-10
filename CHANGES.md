@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- Stopped capture and detached video callbacks before queue teardown, then
+  cleared the borrowed session pointer after releasing its preview-layer owner.
 - Added SHA-256 integrity checks for the TensorFlow graph, ImageNet labels, and
   bundled sample image.
 - Fixed hosted verification to Ubuntu 24.04 with concurrency cancellation and

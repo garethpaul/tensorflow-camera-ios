@@ -27,6 +27,7 @@ Priority:
 - Keep shared bundle-resource lookup non-fatal for model paths
 - Keep label file loading fail-closed before prediction rendering
 - Keep manually retained camera-controller state released during teardown
+- Stop capture callbacks and clear borrowed session state during teardown
 - Keep completed maintenance plans under `docs/plans`
 - Keep the SDK-free `make check` baseline running in GitHub Actions
 - Keep graph, label, and sample-image integrity deterministic
