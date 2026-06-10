@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -12,7 +13,13 @@ CAMERA_OUTPUT_PLAN = DOCS_PLANS / "2026-06-09-camera-output-guard.md"
 TAKE_PICTURE_SESSION_PLAN = DOCS_PLANS / "2026-06-09-take-picture-session-guard.md"
 LABEL_LOAD_PLAN = DOCS_PLANS / "2026-06-09-label-load-guard.md"
 CI_PLAN = DOCS_PLANS / "2026-06-10-ci-baseline.md"
+RESOURCE_PLAN = DOCS_PLANS / "2026-06-10-model-resource-integrity.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
+RESOURCE_SHA256 = {
+    "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
+    "app/data/imagenet_comp_graph_label_strings.txt": "da2a31ecfe9f212ae8dd07379b11a74cb2d7a110eba12c5fc8c862a65b8e6606",
+    "app/data/grace_hopper.jpg": "e1f57e98cf38076c0f9a058d74ffddf90f20453e436033784606b63c8ed2e49a",
+}
 
 
 def read_text(relative_path):
@@ -28,6 +35,7 @@ def require_paths():
         "app/CameraExampleAppDelegate.m",
         "app/data/tensorflow_inception_graph.pb",
         "app/data/imagenet_comp_graph_label_strings.txt",
+        "app/data/grace_hopper.jpg",
     ):
         if not (ROOT / relative_path).exists():
             errors.append(f"missing required file: {relative_path}")
@@ -46,6 +54,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-09-label-load-guard.md is missing")
     if not CI_PLAN.exists():
         errors.append("docs/plans/2026-06-10-ci-baseline.md is missing")
+    if not RESOURCE_PLAN.exists():
+        errors.append("docs/plans/2026-06-10-model-resource-integrity.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -68,6 +78,10 @@ def ci_checks():
     for fragment in (
         "permissions:",
         "contents: read",
+        "concurrency:",
+        "cancel-in-progress: true",
+        "contract:",
+        "runs-on: ubuntu-24.04",
         "workflow_dispatch:",
         "timeout-minutes: 5",
         "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10",
@@ -85,8 +99,27 @@ def ci_checks():
     return errors
 
 
+def resource_checks():
+    errors = []
+    for relative_path, expected_hash in RESOURCE_SHA256.items():
+        resource_path = ROOT / relative_path
+        if not resource_path.is_file():
+            errors.append(f"resource is missing: {relative_path}")
+            continue
+        digest = hashlib.sha256()
+        with resource_path.open("rb") as resource:
+            for chunk in iter(lambda: resource.read(1024 * 1024), b""):
+                digest.update(chunk)
+        actual_hash = digest.hexdigest()
+        if actual_hash != expected_hash:
+            errors.append(
+                f"resource hash mismatch for {relative_path}: expected {expected_hash}, got {actual_hash}"
+            )
+    return errors
+
+
 def project_checks():
-    errors = docs_plan_checks() + require_paths() + ci_checks()
+    errors = docs_plan_checks() + require_paths() + ci_checks() + resource_checks()
     if errors:
         return errors
 
@@ -102,6 +135,16 @@ def project_checks():
     ):
         if fragment not in project:
             errors.append(f"project is missing expected setting: {fragment}")
+
+    makefile = read_text("Makefile")
+    for fragment in (
+        "ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))",
+        '"$(ROOT)/scripts/check-ios-camera-source.py"',
+        '"$(ROOT)/app/tensorflow_camera.xcodeproj"',
+        "-target CameraExample",
+    ):
+        if fragment not in makefile:
+            errors.append(f"Makefile is missing root-independent fragment: {fragment}")
 
     return errors
 

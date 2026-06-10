@@ -2,6 +2,12 @@
 
 ## 2026-06-10
 
+- Added SHA-256 integrity checks for the TensorFlow graph, ImageNet labels, and
+  bundled sample image.
+- Fixed hosted verification to Ubuntu 24.04 with concurrency cancellation and
+  made Make targets independent of the caller's working directory.
+- Corrected the optional Xcode build target name while documenting its missing
+  generated TensorFlow/protobuf archive prerequisites.
 - Added a least-privilege GitHub Actions workflow that runs `make check` for
   the static camera baseline with commit-pinned Node 24 actions and a bounded
   runtime.

@@ -66,14 +66,19 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   bundle-resource lookup used by plain and memory-mapped model loading. Label
   loading also fails early when the labels file cannot be opened and skips empty
   label lines before prediction rendering. They
-  also preserve manual cleanup of controller-owned prediction and speech state.
+  also preserve manual cleanup of controller-owned prediction and speech state
+  and verify SHA-256 digests for the graph, labels, and sample image.
   When
   `xcodebuild` is installed, the `build` target also attempts an iOS simulator
   build with code signing disabled.
 - Static project checks also require completed canonical plans under `docs/plans`.
-- GitHub Actions runs the same `make check` baseline on pushes and pull
-  requests without requiring Xcode. The workflow has read-only repository
-  permissions, a five-minute timeout, and commit-pinned Node 24 actions.
+- GitHub Actions runs the same `make check` baseline on fixed Ubuntu 24.04 for
+  pushes and pull requests without requiring Xcode. The workflow has read-only
+  repository permissions, concurrency cancellation, a five-minute timeout,
+  and commit-pinned Node 24 actions.
+- Full Xcode linking still requires regenerated TensorFlow/protobuf static
+  archives and replacement of developer-local search paths in the legacy
+  project; those generated dependencies are not checked into this repository.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and
   destination can be used on macOS for deeper verification.
 
@@ -119,6 +124,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   freeze/resume missing-session guard.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the portable GitHub Actions
   contract gate.
+- See `docs/plans/2026-06-10-model-resource-integrity.md` for model, label, and
+  sample-image integrity verification.
 
 ## Contributing
 

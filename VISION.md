@@ -29,6 +29,7 @@ Priority:
 - Keep manually retained camera-controller state released during teardown
 - Keep completed maintenance plans under `docs/plans`
 - Keep the SDK-free `make check` baseline running in GitHub Actions
+- Keep graph, label, and sample-image integrity deterministic
 - Treat Bazel, TensorFlow, and Objective-C++ setup as legacy context
 
 Next priorities:
