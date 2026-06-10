@@ -15,6 +15,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 - `BUILD` - legacy TensorFlow/Bazel build metadata
 - `CHANGES.md` - maintenance history for camera lifecycle checks
 - `Makefile` - local verification entry points
+- `.github/workflows/check.yml` - GitHub Actions baseline for `make check`
 - `app` - source or example code
 - `docs/plans` - completed maintenance plans for the current baseline
 - `plans` - historical implementation notes
@@ -70,6 +71,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   `xcodebuild` is installed, the `build` target also attempts an iOS simulator
   build with code signing disabled.
 - Static project checks also require completed canonical plans under `docs/plans`.
+- GitHub Actions runs the same `make check` baseline on pushes and pull
+  requests without requiring Xcode. The workflow has read-only repository
+  permissions, a five-minute timeout, and commit-pinned Node 24 actions.
 - Xcode's test action or `xcodebuild test` with the appropriate scheme and
   destination can be used on macOS for deeper verification.
 
@@ -113,6 +117,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   setup guard.
 - See `docs/plans/2026-06-09-take-picture-session-guard.md` for the
   freeze/resume missing-session guard.
+- See `docs/plans/2026-06-10-ci-baseline.md` for the portable GitHub Actions
+  contract gate.
 
 ## Contributing
 

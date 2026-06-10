@@ -28,6 +28,7 @@ Priority:
 - Keep label file loading fail-closed before prediction rendering
 - Keep manually retained camera-controller state released during teardown
 - Keep completed maintenance plans under `docs/plans`
+- Keep the SDK-free `make check` baseline running in GitHub Actions
 - Treat Bazel, TensorFlow, and Objective-C++ setup as legacy context
 
 Next priorities:
