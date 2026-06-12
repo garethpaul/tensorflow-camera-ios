@@ -35,9 +35,13 @@ Helpful reports include:
 - Review found secret-like configuration names that require careful review before use; changes in those areas should receive security-focused review before merge.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 - GitHub Actions runs the SDK-free `make check` baseline with read-only
-  repository permissions on Ubuntu 24.04, a five-minute timeout, concurrency
-  cancellation, and commit-pinned Node 24 actions. The gate verifies exact
-  SHA-256 digests for the graph, label set, and sample image.
+  repository permissions and credential-free checkout on Ubuntu 24.04, a
+  five-minute timeout, concurrency cancellation, and commit-pinned Node 24
+  actions. Structural mutation tests reject contradictory credential settings,
+  write permissions, and unreviewed actions. The gate verifies exact SHA-256
+  digests for the graph, label set, and sample image.
+- Model labels that fail explicit UTF-8 conversion are skipped before they can
+  become invalid Objective-C collection keys.
 - Camera teardown stops local capture and detaches frame callbacks before
   releasing their serial queue, preventing stale processing after shutdown.
 

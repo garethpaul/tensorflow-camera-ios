@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-12
+
+- Rejected invalid UTF-8 model labels before Objective-C dictionary insertion,
+  replacing deprecated unchecked C-string conversion.
+
 ## 2026-06-10
 
 - Stopped capture and detached video callbacks before queue teardown, then
@@ -12,8 +17,10 @@
   generated TensorFlow/protobuf archive prerequisites.
 - Added a least-privilege GitHub Actions workflow that runs `make check` for
   the static camera baseline with commit-pinned Node 24 actions and a bounded
-  runtime.
-- Extended project checks to require the CI workflow and completed CI plan.
+  runtime. Checkout credentials are not persisted.
+- Added dependency-free structural workflow tests that reject duplicate,
+  relocated, or contradictory credentials and other policy regressions.
+- Extended project checks to require the CI workflow and completed CI plans.
 
 ## 2026-06-09
 

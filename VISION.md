@@ -26,10 +26,13 @@ Priority:
 - Keep missing model or label assets user-visible instead of fatal
 - Keep shared bundle-resource lookup non-fatal for model paths
 - Keep label file loading fail-closed before prediction rendering
+- Keep invalid label encodings from reaching prediction UI collections
 - Keep manually retained camera-controller state released during teardown
 - Stop capture callbacks and clear borrowed session state during teardown
 - Keep completed maintenance plans under `docs/plans`
 - Keep the SDK-free `make check` baseline running in GitHub Actions
+- Keep hosted verification read-only, credential-free, pinned, and structurally
+  protected against workflow policy regressions
 - Keep graph, label, and sample-image integrity deterministic
 - Treat Bazel, TensorFlow, and Objective-C++ setup as legacy context
 

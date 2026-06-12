@@ -424,7 +424,12 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         const float predictionValue = predictions(index);
         if (predictionValue > 0.05f) {
           std::string label = labels[index];
-          NSString *labelObject = [NSString stringWithCString:label.c_str()];
+          NSString *labelObject =
+              [NSString stringWithUTF8String:label.c_str()];
+          if (!labelObject) {
+            LOG(ERROR) << "Skipping invalid UTF-8 model label";
+            continue;
+          }
           NSNumber *valueObject = [NSNumber numberWithFloat:predictionValue];
           [newValues setObject:valueObject forKey:labelObject];
         }

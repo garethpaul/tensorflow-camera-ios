@@ -5,6 +5,8 @@ import re
 import sys
 from pathlib import Path
 
+from workflow_contract import validate as validate_workflow
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS_PLANS = ROOT / "docs" / "plans"
@@ -15,6 +17,7 @@ LABEL_LOAD_PLAN = DOCS_PLANS / "2026-06-09-label-load-guard.md"
 CI_PLAN = DOCS_PLANS / "2026-06-10-ci-baseline.md"
 RESOURCE_PLAN = DOCS_PLANS / "2026-06-10-model-resource-integrity.md"
 CAPTURE_TEARDOWN_PLAN = DOCS_PLANS / "2026-06-10-capture-teardown-order.md"
+LABEL_ENCODING_PLAN = DOCS_PLANS / "2026-06-12-label-encoding-guard.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -59,6 +62,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-10-model-resource-integrity.md is missing")
     if not CAPTURE_TEARDOWN_PLAN.exists():
         errors.append("docs/plans/2026-06-10-capture-teardown-order.md is missing")
+    if not LABEL_ENCODING_PLAN.exists():
+        errors.append("docs/plans/2026-06-12-label-encoding-guard.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -78,22 +83,7 @@ def ci_checks():
         return [".github/workflows/check.yml is missing"]
 
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
-    for fragment in (
-        "permissions:",
-        "contents: read",
-        "concurrency:",
-        "cancel-in-progress: true",
-        "contract:",
-        "runs-on: ubuntu-24.04",
-        "workflow_dispatch:",
-        "timeout-minutes: 5",
-        "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10",
-        "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
-        'python-version: "3.12"',
-        "run: make check",
-    ):
-        if fragment not in workflow:
-            errors.append(f"CI workflow is missing expected fragment: {fragment}")
+    errors.extend(f"CI workflow must {requirement}" for requirement in validate_workflow(workflow))
 
     readme = read_text("README.md")
     if "GitHub Actions" not in readme:
@@ -143,6 +133,7 @@ def project_checks():
     for fragment in (
         "ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))",
         '"$(ROOT)/scripts/check-ios-camera-source.py"',
+        '"$(ROOT)/scripts/test_workflow_contract.py"',
         '"$(ROOT)/app/tensorflow_camera.xcodeproj"',
         "-target CameraExample",
     ):
@@ -257,6 +248,14 @@ def behavior_checks():
         errors.append("model output handling must not index labels by prediction count modulo")
     if "const int result_count" not in source:
         errors.append("model output handling must bound iteration by labels and predictions")
+    if "stringWithCString:label.c_str()" in source:
+        errors.append("model labels must not use unchecked legacy C-string conversion")
+    if "stringWithUTF8String:label.c_str()" not in source:
+        errors.append("model labels must use explicit UTF-8 conversion")
+    if "if (!labelObject)" not in source:
+        errors.append("model label rendering must reject failed string conversion")
+    if "Skipping invalid UTF-8 model label" not in source:
+        errors.append("model label rendering must log skipped invalid labels")
     if 'LOG(FATAL) << "Couldn\'t load model' in source:
         errors.append("model load failures must not crash with LOG(FATAL)")
     if 'LOG(FATAL) << "Couldn\'t load labels' in source:

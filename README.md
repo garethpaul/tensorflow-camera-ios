@@ -3,6 +3,11 @@
 <!-- README-OVERVIEW-IMAGE -->
 ![Project overview](docs/readme-overview.svg)
 
+## Device Preview
+
+<!-- DEVICE-PREVIEW-IMAGE -->
+![Device preview](docs/device-preview.svg)
+
 ## Overview
 
 `garethpaul/tensorflow-camera-ios` is an Apple platform application or Swift sample. A tensorflow camera for iOS.
@@ -67,7 +72,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   label assets from becoming fatal launch crashes, including the shared
   bundle-resource lookup used by plain and memory-mapped model loading. Label
   loading also fails early when the labels file cannot be opened and skips empty
-  label lines before prediction rendering. They
+  label lines before prediction rendering. Prediction rendering also skips and
+  logs labels that cannot be converted from UTF-8 instead of inserting a nil
+  dictionary key. They
   also preserve manual cleanup of controller-owned prediction and speech state
   and verify SHA-256 digests for the graph, labels, and sample image.
   When
@@ -76,8 +83,10 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Static project checks also require completed canonical plans under `docs/plans`.
 - GitHub Actions runs the same `make check` baseline on fixed Ubuntu 24.04 for
   pushes and pull requests without requiring Xcode. The workflow has read-only
-  repository permissions, concurrency cancellation, a five-minute timeout,
-  and commit-pinned Node 24 actions.
+  repository permissions, credential-free checkout, concurrency cancellation,
+  a five-minute timeout, and commit-pinned Node 24 actions. Dependency-free
+  mutation tests reject duplicate, relocated, or contradictory credential
+  settings and other workflow policy regressions.
 - Full Xcode linking still requires regenerated TensorFlow/protobuf static
   archives and replacement of developer-local search paths in the legacy
   project; those generated dependencies are not checked into this repository.
