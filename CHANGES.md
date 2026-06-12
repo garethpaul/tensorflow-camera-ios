@@ -2,6 +2,8 @@
 
 ## 2026-06-12
 
+- Drained already-enqueued camera callbacks after delegate detachment and before
+  resource release, with queue identity preventing synchronous self-deadlock.
 - Rejected invalid UTF-8 model labels before Objective-C dictionary insertion,
   replacing deprecated unchecked C-string conversion.
 

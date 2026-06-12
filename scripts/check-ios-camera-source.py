@@ -18,6 +18,7 @@ CI_PLAN = DOCS_PLANS / "2026-06-10-ci-baseline.md"
 RESOURCE_PLAN = DOCS_PLANS / "2026-06-10-model-resource-integrity.md"
 CAPTURE_TEARDOWN_PLAN = DOCS_PLANS / "2026-06-10-capture-teardown-order.md"
 LABEL_ENCODING_PLAN = DOCS_PLANS / "2026-06-12-label-encoding-guard.md"
+CALLBACK_DRAIN_PLAN = DOCS_PLANS / "2026-06-12-capture-callback-drain.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -64,6 +65,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-10-capture-teardown-order.md is missing")
     if not LABEL_ENCODING_PLAN.exists():
         errors.append("docs/plans/2026-06-12-label-encoding-guard.md is missing")
+    if not CALLBACK_DRAIN_PLAN.exists():
+        errors.append("docs/plans/2026-06-12-capture-callback-drain.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -158,6 +161,7 @@ def behavior_checks():
         teardown_contract = (
             "[session stopRunning];",
             "[videoDataOutput setSampleBufferDelegate:nil queue:NULL];",
+            "[self drainVideoDataOutputQueue];",
             "[videoDataOutput release];",
             "dispatch_release(videoDataOutputQueue);",
             "[previewLayer release];",
@@ -167,7 +171,30 @@ def behavior_checks():
         if any(position < 0 for position in positions):
             errors.append("camera teardown must stop capture, detach callbacks, release resources, and clear session")
         elif positions != sorted(positions):
-            errors.append("camera teardown must release capture resources in lifecycle order")
+            errors.append("camera teardown must detach, drain, and release capture resources in lifecycle order")
+    if "static char VideoDataOutputQueueKey;" not in source:
+        errors.append("video callback queue must have private queue-specific identity")
+    queue_create = 'dispatch_queue_create("VideoDataOutputQueue", DISPATCH_QUEUE_SERIAL);'
+    queue_identity = "dispatch_queue_set_specific(videoDataOutputQueue, &VideoDataOutputQueueKey,"
+    queue_delegate = "[videoDataOutput setSampleBufferDelegate:self queue:videoDataOutputQueue];"
+    queue_setup_positions = [source.find(fragment) for fragment in (queue_create, queue_identity, queue_delegate)]
+    if any(position < 0 for position in queue_setup_positions):
+        errors.append("video callback queue must create, identify, and then install its delegate")
+    elif queue_setup_positions != sorted(queue_setup_positions):
+        errors.append("video callback queue must register identity before delegate installation")
+    drain_match = re.search(r"- \(void\)drainVideoDataOutputQueue \{(.*?)\n\}", source, re.DOTALL)
+    if not drain_match:
+        errors.append("camera controller callback-drain helper is missing")
+    else:
+        drain = drain_match.group(1)
+        if "!videoDataOutputQueue" not in drain:
+            errors.append("callback drain must tolerate a missing video queue")
+        if "dispatch_get_specific(&VideoDataOutputQueueKey)" not in drain:
+            errors.append("callback drain must identify execution on the video queue")
+        if "dispatch_get_specific(&VideoDataOutputQueueKey) ==" not in drain:
+            errors.append("callback drain must skip synchronization on the video queue itself")
+        if "dispatch_sync(videoDataOutputQueue, ^{});" not in drain:
+            errors.append("callback drain must wait for already-enqueued video work")
     if source.count("[videoDataOutput setSampleBufferDelegate:nil queue:NULL];") < 2:
         errors.append("camera setup failure and teardown must both detach the video sample delegate")
     if "AVCaptureStillImageIsCapturingStillImageContext" not in source:

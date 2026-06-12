@@ -29,6 +29,7 @@ Priority:
 - Keep invalid label encodings from reaching prediction UI collections
 - Keep manually retained camera-controller state released during teardown
 - Stop capture callbacks and clear borrowed session state during teardown
+- Drain in-flight camera callbacks without self-deadlocking during teardown
 - Keep completed maintenance plans under `docs/plans`
 - Keep the SDK-free `make check` baseline running in GitHub Actions
 - Keep hosted verification read-only, credential-free, pinned, and structurally

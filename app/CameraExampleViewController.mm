@@ -45,9 +45,11 @@ const std::string output_layer_name = "softmax1";
 
 static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
     @"AVCaptureStillImageIsCapturingStillImageContext";
+static char VideoDataOutputQueueKey;
 
 @interface CameraExampleViewController (InternalMethods)
 - (void)setupAVCapture;
+- (void)drainVideoDataOutputQueue;
 - (void)teardownAVCapture;
 @end
 
@@ -147,6 +149,8 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
   [videoDataOutput setAlwaysDiscardsLateVideoFrames:YES];
   videoDataOutputQueue =
       dispatch_queue_create("VideoDataOutputQueue", DISPATCH_QUEUE_SERIAL);
+  dispatch_queue_set_specific(videoDataOutputQueue, &VideoDataOutputQueueKey,
+                              &VideoDataOutputQueueKey, NULL);
   [videoDataOutput setSampleBufferDelegate:self queue:videoDataOutputQueue];
 
   if ([session canAddOutput:videoDataOutput]) {
@@ -175,12 +179,22 @@ static const NSString *AVCaptureStillImageIsCapturingStillImageContext =
   [session release];
 }
 
+- (void)drainVideoDataOutputQueue {
+  if (!videoDataOutputQueue ||
+      dispatch_get_specific(&VideoDataOutputQueueKey) ==
+          &VideoDataOutputQueueKey) {
+    return;
+  }
+  dispatch_sync(videoDataOutputQueue, ^{});
+}
+
 - (void)teardownAVCapture {
   if (session && [session isRunning]) {
     [session stopRunning];
   }
   if (videoDataOutput) {
     [videoDataOutput setSampleBufferDelegate:nil queue:NULL];
+    [self drainVideoDataOutputQueue];
     [videoDataOutput release];
     videoDataOutput = nil;
   }
