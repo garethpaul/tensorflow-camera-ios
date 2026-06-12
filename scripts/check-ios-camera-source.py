@@ -17,6 +17,7 @@ LABEL_LOAD_PLAN = DOCS_PLANS / "2026-06-09-label-load-guard.md"
 CI_PLAN = DOCS_PLANS / "2026-06-10-ci-baseline.md"
 RESOURCE_PLAN = DOCS_PLANS / "2026-06-10-model-resource-integrity.md"
 CAPTURE_TEARDOWN_PLAN = DOCS_PLANS / "2026-06-10-capture-teardown-order.md"
+LABEL_ENCODING_PLAN = DOCS_PLANS / "2026-06-12-label-encoding-guard.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -61,6 +62,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-10-model-resource-integrity.md is missing")
     if not CAPTURE_TEARDOWN_PLAN.exists():
         errors.append("docs/plans/2026-06-10-capture-teardown-order.md is missing")
+    if not LABEL_ENCODING_PLAN.exists():
+        errors.append("docs/plans/2026-06-12-label-encoding-guard.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -245,6 +248,14 @@ def behavior_checks():
         errors.append("model output handling must not index labels by prediction count modulo")
     if "const int result_count" not in source:
         errors.append("model output handling must bound iteration by labels and predictions")
+    if "stringWithCString:label.c_str()" in source:
+        errors.append("model labels must not use unchecked legacy C-string conversion")
+    if "stringWithUTF8String:label.c_str()" not in source:
+        errors.append("model labels must use explicit UTF-8 conversion")
+    if "if (!labelObject)" not in source:
+        errors.append("model label rendering must reject failed string conversion")
+    if "Skipping invalid UTF-8 model label" not in source:
+        errors.append("model label rendering must log skipped invalid labels")
     if 'LOG(FATAL) << "Couldn\'t load model' in source:
         errors.append("model load failures must not crash with LOG(FATAL)")
     if 'LOG(FATAL) << "Couldn\'t load labels' in source:

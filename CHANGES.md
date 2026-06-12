@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-12
+
+- Rejected invalid UTF-8 model labels before Objective-C dictionary insertion,
+  replacing deprecated unchecked C-string conversion.
+
 ## 2026-06-10
 
 - Stopped capture and detached video callbacks before queue teardown, then

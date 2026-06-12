@@ -72,7 +72,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   label assets from becoming fatal launch crashes, including the shared
   bundle-resource lookup used by plain and memory-mapped model loading. Label
   loading also fails early when the labels file cannot be opened and skips empty
-  label lines before prediction rendering. They
+  label lines before prediction rendering. Prediction rendering also skips and
+  logs labels that cannot be converted from UTF-8 instead of inserting a nil
+  dictionary key. They
   also preserve manual cleanup of controller-owned prediction and speech state
   and verify SHA-256 digests for the graph, labels, and sample image.
   When
