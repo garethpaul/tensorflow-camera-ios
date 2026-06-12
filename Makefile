@@ -1,21 +1,25 @@
-.PHONY: build check lint test verify
+.PHONY: build check contract-test lint test verify
 
 PYTHON ?= python3
 XCODEBUILD ?= xcodebuild
+ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 lint:
-	$(PYTHON) scripts/check-ios-camera-source.py --mode project
+	$(PYTHON) "$(ROOT)/scripts/check-ios-camera-source.py" --mode project
 
 test:
-	$(PYTHON) scripts/check-ios-camera-source.py --mode behavior
+	$(PYTHON) "$(ROOT)/scripts/check-ios-camera-source.py" --mode behavior
+
+contract-test:
+	$(PYTHON) "$(ROOT)/scripts/test_workflow_contract.py"
 
 build: lint
 	@if command -v "$(XCODEBUILD)" >/dev/null 2>&1; then \
-		"$(XCODEBUILD)" -project app/tensorflow_camera.xcodeproj -target tensorflow_camera -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build; \
+		"$(XCODEBUILD)" -project "$(ROOT)/app/tensorflow_camera.xcodeproj" -target CameraExample -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build; \
 	else \
 		echo "xcodebuild not found; static project checks completed"; \
 	fi
 
-verify: lint test build
+verify: lint contract-test test build
 
 check: verify
