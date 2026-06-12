@@ -11,6 +11,8 @@ CANONICAL_PLAN = DOCS_PLANS / "2026-06-08-tensorflow-camera-ios-baseline.md"
 CAMERA_OUTPUT_PLAN = DOCS_PLANS / "2026-06-09-camera-output-guard.md"
 TAKE_PICTURE_SESSION_PLAN = DOCS_PLANS / "2026-06-09-take-picture-session-guard.md"
 LABEL_LOAD_PLAN = DOCS_PLANS / "2026-06-09-label-load-guard.md"
+CI_PLAN = DOCS_PLANS / "2026-06-10-ci-baseline.md"
+CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 
 
 def read_text(relative_path):
@@ -42,6 +44,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-09-take-picture-session-guard.md is missing")
     if not LABEL_LOAD_PLAN.exists():
         errors.append("docs/plans/2026-06-09-label-load-guard.md is missing")
+    if not CI_PLAN.exists():
+        errors.append("docs/plans/2026-06-10-ci-baseline.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -55,8 +59,30 @@ def docs_plan_checks():
     return errors
 
 
+def ci_checks():
+    errors = []
+    if not CI_WORKFLOW.exists():
+        return [".github/workflows/check.yml is missing"]
+
+    workflow = CI_WORKFLOW.read_text(encoding="utf-8")
+    for fragment in (
+        "actions/checkout@v4",
+        "actions/setup-python@v5",
+        'python-version: "3.12"',
+        "make check",
+    ):
+        if fragment not in workflow:
+            errors.append(f"CI workflow is missing expected fragment: {fragment}")
+
+    readme = read_text("README.md")
+    if "GitHub Actions" not in readme:
+        errors.append("README must document the GitHub Actions check")
+
+    return errors
+
+
 def project_checks():
-    errors = docs_plan_checks() + require_paths()
+    errors = docs_plan_checks() + require_paths() + ci_checks()
     if errors:
         return errors
 
