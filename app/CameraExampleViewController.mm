@@ -412,8 +412,12 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
   for (int y = 0; y < wanted_input_height; ++y) {
     float *out_row = out + (y * wanted_input_width * wanted_input_channels);
     for (int x = 0; x < wanted_input_width; ++x) {
-      const int in_x = (x * image_width) / wanted_input_width;
-      const int in_y = (y * image_height) / wanted_input_height;
+      const size_t in_x =
+          (static_cast<size_t>(x) * sourceWidth) /
+          static_cast<size_t>(wanted_input_width);
+      const size_t in_y =
+          (static_cast<size_t>(y) * static_cast<size_t>(image_height)) /
+          static_cast<size_t>(wanted_input_height);
       tensorflow::uint8 *in_pixel =
           in + (in_y * sourceRowBytes) + (in_x * image_channels);
       float *out_pixel = out_row + (x * wanted_input_channels);

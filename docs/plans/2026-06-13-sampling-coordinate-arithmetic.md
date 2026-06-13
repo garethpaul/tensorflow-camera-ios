@@ -1,6 +1,6 @@
 # Sampling Coordinate Arithmetic
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -60,3 +60,28 @@ layout validation, missing documentation, and regressed plan status.
   prediction UI, project settings, resource digests, or deployment targets.
 - Do not change the resize algorithm or claim Xcode, simulator, device, camera,
   or TensorFlow runtime validation from the Linux host.
+
+## Work Completed
+
+- Promoted output x and y loop coordinates before multiplying by validated
+  source dimensions.
+- Retained `size_t` source indices through row-stride pointer addressing.
+- Preserved crop, channel, tensor, prediction, and lock/unlock behavior.
+- Added fail-closed source and documentation contracts.
+
+## Verification
+
+- `python3 -B scripts/check-ios-camera-source.py --mode behavior` passed.
+- Full `make check` passed project, behavior, resource-integrity, and all 16
+  workflow mutation contracts; the build target truthfully reported that local
+  `xcodebuild` is unavailable.
+- The same full gate passed from an external working directory.
+- Seven focused mutations covering signed x/y products, narrowed x/y indices,
+  the legacy expression, documentation drift, and plan-status regression were
+  rejected.
+- Parsed 1 workflow YAML file, 1 plist, 5 JSON files, and 2 SVG files; Python
+  syntax, diff whitespace, generated-artifact, and intended-diff secret audits
+  passed.
+- Plan-aware arithmetic, frame-bounds, testing, maintainability, and scope
+  review found no actionable findings. Browser testing is not applicable to
+  this native Objective-C++ camera sample.

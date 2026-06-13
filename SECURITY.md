@@ -47,6 +47,8 @@ Helpful reports include:
   identity prevents that drain from synchronously waiting on itself.
 - Camera preprocessing rejects impossible dimensions and undersized Core Video
   row strides before locking or reading frame memory.
+- Camera sampling coordinate arithmetic promotes resize-loop intermediates
+  before multiplication and pointer offset calculation.
 
 ## Mobile Privacy Notes
 

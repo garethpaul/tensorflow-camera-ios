@@ -71,7 +71,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   self-deadlock if cleanup is already executing on the callback queue.
   Frame preprocessing checks also preserve source `x`/`y` coordinate mapping
   and `CVPixelBuffer` row-stride addressing while rejecting zero, oversized,
-  or undersized-stride frame layouts before memory is locked. The checks guard
+  or undersized-stride frame layouts before memory is locked. Sampling
+  coordinate arithmetic is promoted before multiplication so accepted large
+  dimensions cannot overflow signed resize intermediates. The checks guard
   missing model or label assets from becoming fatal launch crashes, including the shared
   bundle-resource lookup used by plain and memory-mapped model loading. Label
   loading also fails early when the labels file cannot be opened and skips empty
@@ -144,6 +146,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   callback shutdown and session pointer cleanup.
 - See `docs/plans/2026-06-12-capture-callback-drain.md` for deadlock-safe
   draining of already-enqueued camera callbacks during teardown.
+- See `docs/plans/2026-06-13-sampling-coordinate-arithmetic.md` for overflow-safe
+  frame sampling coordinate arithmetic.
 
 ## Contributing
 

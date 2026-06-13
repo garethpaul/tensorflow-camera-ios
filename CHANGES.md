@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- Promoted sampling coordinate arithmetic before multiplication to prevent
+  signed overflow in camera frame pointer offsets.
 - Rejected zero, oversized, and undersized-stride camera frame layouts before
   locking Core Video memory or entering TensorFlow preprocessing.
 

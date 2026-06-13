@@ -20,6 +20,7 @@ CAPTURE_TEARDOWN_PLAN = DOCS_PLANS / "2026-06-10-capture-teardown-order.md"
 LABEL_ENCODING_PLAN = DOCS_PLANS / "2026-06-12-label-encoding-guard.md"
 CALLBACK_DRAIN_PLAN = DOCS_PLANS / "2026-06-12-capture-callback-drain.md"
 FRAME_LAYOUT_PLAN = DOCS_PLANS / "2026-06-13-frame-layout-validation.md"
+SAMPLING_ARITHMETIC_PLAN = DOCS_PLANS / "2026-06-13-sampling-coordinate-arithmetic.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -70,6 +71,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-12-capture-callback-drain.md is missing")
     if not FRAME_LAYOUT_PLAN.exists():
         errors.append("docs/plans/2026-06-13-frame-layout-validation.md is missing")
+    if not SAMPLING_ARITHMETIC_PLAN.exists():
+        errors.append("docs/plans/2026-06-13-sampling-coordinate-arithmetic.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -79,6 +82,10 @@ def docs_plan_checks():
         plan = plan_path.read_text(encoding="utf-8")
         if "Status: Completed" not in plan or "make check" not in plan:
             errors.append(f"{plan_path.relative_to(ROOT)} must record completed status and make check verification")
+
+    for relative_path in ("README.md", "SECURITY.md", "VISION.md", "CHANGES.md"):
+        if "sampling coordinate arithmetic" not in read_text(relative_path).lower():
+            errors.append(f"{relative_path} must document sampling coordinate arithmetic")
 
     return errors
 
@@ -283,10 +290,14 @@ def behavior_checks():
     pixel_lock = source.find("CVPixelBufferLockBaseAddress(pixelBuffer, 0)")
     if geometry_guard < 0 or pixel_lock < 0 or geometry_guard > pixel_lock:
         errors.append("frame preprocessing must validate geometry before locking frame memory")
-    if "const int in_x = (x * image_width) / wanted_input_width;" not in source:
-        errors.append("frame preprocessing must derive source x coordinates from output x")
-    if "const int in_y = (y * image_height) / wanted_input_height;" not in source:
-        errors.append("frame preprocessing must derive source y coordinates from output y")
+    if "const size_t in_x =\n          (static_cast<size_t>(x) * sourceWidth) /" not in source:
+        errors.append("frame preprocessing must derive source x coordinates with size-aware arithmetic")
+    if "const size_t in_y =\n          (static_cast<size_t>(y) * static_cast<size_t>(image_height)) /" not in source:
+        errors.append("frame preprocessing must derive source y coordinates with size-aware arithmetic")
+    if "const int in_x" in source or "const int in_y" in source:
+        errors.append("frame preprocessing must not narrow source sampling coordinates to int")
+    if "(x * image_width)" in source or "(y * image_height)" in source:
+        errors.append("frame preprocessing must not multiply sampling coordinates as signed int")
     if "in + (in_y * sourceRowBytes) + (in_x * image_channels)" not in source:
         errors.append("frame preprocessing must use CVPixelBuffer row bytes for source rows")
     if "&outputs[0]" in source:
