@@ -1,6 +1,6 @@
 # Frame Layout Validation
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -75,3 +75,32 @@ the static camera safety boundary covers both pixel format and geometry.
   by `AVCaptureVideoDataOutput`.
 - Static source contracts can prove the guard structure and ordering, but only
   Apple tooling and a runtime camera can validate real `CVPixelBuffer` layouts.
+
+## Work Completed
+
+- Read Core Video row bytes, width, and height as native `size_t` values.
+- Rejected zero dimensions, dimensions outside the existing integer model-loop
+  range, and row strides too short for four-byte pixels before buffer locking.
+- Used division for the minimum-stride comparison so the guard does not
+  multiply an untrusted width.
+- Preserved supported formats, crop and sampling behavior, lock/unlock paths,
+  TensorFlow input and prediction behavior, callback draining, project files,
+  assets, and vendored code.
+- Extended fail-closed source contracts and maintenance documentation.
+
+## Verification
+
+- Focused behavior contracts and all 16 workflow mutations passed.
+- Python source compilation and `git diff --check` passed before the full gate.
+- Local `xcodebuild` was unavailable on Linux; no native compile, simulator,
+  device, camera, or TensorFlow runtime behavior is claimed.
+- `make check` passed project and behavior contracts, all 16 workflow
+  mutations, resource-integrity checks, and the truthful no-Xcode build
+  fallback.
+- The same full gate passed from an external working directory.
+- Seven focused hostile mutation categories were rejected: row-stride
+  truncation, removed zero-width or zero-height guards, removed integer bounds,
+  overflow-prone stride multiplication, validation after locking, and a missing
+  diagnostic.
+- Plan-aware frame-safety, arithmetic, lifecycle, testing, maintainability, and
+  scope review found no remaining actionable issue.

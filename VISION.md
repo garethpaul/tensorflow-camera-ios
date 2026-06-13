@@ -22,6 +22,7 @@ Priority:
 - Keep freeze/resume controls fail-closed when capture setup is unavailable
 - Keep front/back camera switching fail-closed when replacement inputs fail
 - Keep camera frame preprocessing faithful to source coordinates and row stride
+- Reject malformed pixel-buffer geometry before frame memory access
 - Keep model outputs and labels bounded before rendering predictions
 - Keep missing model or label assets user-visible instead of fatal
 - Keep shared bundle-resource lookup non-fatal for model paths

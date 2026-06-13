@@ -19,6 +19,7 @@ RESOURCE_PLAN = DOCS_PLANS / "2026-06-10-model-resource-integrity.md"
 CAPTURE_TEARDOWN_PLAN = DOCS_PLANS / "2026-06-10-capture-teardown-order.md"
 LABEL_ENCODING_PLAN = DOCS_PLANS / "2026-06-12-label-encoding-guard.md"
 CALLBACK_DRAIN_PLAN = DOCS_PLANS / "2026-06-12-capture-callback-drain.md"
+FRAME_LAYOUT_PLAN = DOCS_PLANS / "2026-06-13-frame-layout-validation.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -67,6 +68,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-12-label-encoding-guard.md is missing")
     if not CALLBACK_DRAIN_PLAN.exists():
         errors.append("docs/plans/2026-06-12-capture-callback-drain.md is missing")
+    if not FRAME_LAYOUT_PLAN.exists():
+        errors.append("docs/plans/2026-06-13-frame-layout-validation.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -259,6 +262,27 @@ def behavior_checks():
         errors.append("frame preprocessing must handle pixel buffer lock failures")
     if "CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);" not in source:
         errors.append("frame preprocessing must unlock locked pixel buffers")
+    if "#include <limits.h>" not in source:
+        errors.append("frame preprocessing must retain the native dimension bound")
+    for fragment in (
+        "const size_t sourceRowBytes = CVPixelBufferGetBytesPerRow(pixelBuffer);",
+        "const size_t sourceWidth = CVPixelBufferGetWidth(pixelBuffer);",
+        "const size_t sourceFullHeight = CVPixelBufferGetHeight(pixelBuffer);",
+        "sourceWidth == 0 || sourceFullHeight == 0 || sourceWidth > INT_MAX",
+        "sourceFullHeight > INT_MAX",
+        "sourceWidth > (sourceRowBytes / image_channels)",
+        'LOG(ERROR) << "Invalid pixel buffer geometry";',
+        "const int image_width = (int)sourceWidth;",
+        "const int fullHeight = (int)sourceFullHeight;",
+    ):
+        if fragment not in source:
+            errors.append(f"frame preprocessing geometry contract is missing: {fragment}")
+    if "const int sourceRowBytes =" in source:
+        errors.append("frame preprocessing must not truncate the Core Video row stride")
+    geometry_guard = source.find("sourceWidth == 0 || sourceFullHeight == 0")
+    pixel_lock = source.find("CVPixelBufferLockBaseAddress(pixelBuffer, 0)")
+    if geometry_guard < 0 or pixel_lock < 0 or geometry_guard > pixel_lock:
+        errors.append("frame preprocessing must validate geometry before locking frame memory")
     if "const int in_x = (x * image_width) / wanted_input_width;" not in source:
         errors.append("frame preprocessing must derive source x coordinates from output x")
     if "const int in_y = (y * image_height) / wanted_input_height;" not in source:

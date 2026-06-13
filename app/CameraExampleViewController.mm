@@ -19,6 +19,7 @@
 #import "CameraExampleViewController.h"
 
 #include <sys/time.h>
+#include <limits.h>
 
 #include "tensorflow_utils.h"
 
@@ -365,9 +366,18 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     return;
   }
 
-  const int sourceRowBytes = (int)CVPixelBufferGetBytesPerRow(pixelBuffer);
-  const int image_width = (int)CVPixelBufferGetWidth(pixelBuffer);
-  const int fullHeight = (int)CVPixelBufferGetHeight(pixelBuffer);
+  const size_t sourceRowBytes = CVPixelBufferGetBytesPerRow(pixelBuffer);
+  const size_t sourceWidth = CVPixelBufferGetWidth(pixelBuffer);
+  const size_t sourceFullHeight = CVPixelBufferGetHeight(pixelBuffer);
+  const size_t image_channels = 4;
+  if (sourceWidth == 0 || sourceFullHeight == 0 || sourceWidth > INT_MAX ||
+      sourceFullHeight > INT_MAX ||
+      sourceWidth > (sourceRowBytes / image_channels)) {
+    LOG(ERROR) << "Invalid pixel buffer geometry";
+    return;
+  }
+  const int image_width = (int)sourceWidth;
+  const int fullHeight = (int)sourceFullHeight;
   if (CVPixelBufferLockBaseAddress(pixelBuffer, 0) != kCVReturnSuccess) {
     LOG(ERROR) << "Could not lock pixel buffer base address";
     return;
@@ -388,8 +398,6 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     const int marginY = ((fullHeight - image_width) / 2);
     sourceStartAddr = (sourceBaseAddr + (marginY * sourceRowBytes));
   }
-  const int image_channels = 4;
-
   if (image_channels < wanted_input_channels) {
     CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
     return;

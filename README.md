@@ -70,8 +70,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   clear the borrowed session pointer. Queue identity avoids a synchronous
   self-deadlock if cleanup is already executing on the callback queue.
   Frame preprocessing checks also preserve source `x`/`y` coordinate mapping
-  and `CVPixelBuffer` row-stride addressing. The checks guard missing model or
-  label assets from becoming fatal launch crashes, including the shared
+  and `CVPixelBuffer` row-stride addressing while rejecting zero, oversized,
+  or undersized-stride frame layouts before memory is locked. The checks guard
+  missing model or label assets from becoming fatal launch crashes, including the shared
   bundle-resource lookup used by plain and memory-mapped model loading. Label
   loading also fails early when the labels file cannot be opened and skips empty
   label lines before prediction rendering. Prediction rendering also skips and
