@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-13
+
+- Rejected zero, oversized, and undersized-stride camera frame layouts before
+  locking Core Video memory or entering TensorFlow preprocessing.
+
 ## 2026-06-12
 
 - Drained already-enqueued camera callbacks after delegate detachment and before
