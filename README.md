@@ -79,7 +79,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   loading also fails early when the labels file cannot be opened and skips empty
   label lines before prediction rendering. Prediction rendering also skips and
   logs labels that cannot be converted from UTF-8 instead of inserting a nil
-  dictionary key. They
+  dictionary key. Finite model predictions are required before scores enter
+  Objective-C collections, smoothing, sorting, or display state. They
   also preserve manual cleanup of controller-owned prediction and speech state
   and verify SHA-256 digests for the graph, labels, and sample image.
   When
@@ -150,6 +151,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   frame sampling coordinate arithmetic.
 - See `docs/plans/2026-06-14-make-root-override-protection.md` for authoritative
   repository-root selection across all Make aliases.
+- See `docs/plans/2026-06-14-finite-model-predictions.md` for inference-output
+  validation before prediction UI state.
 
 ## Contributing
 

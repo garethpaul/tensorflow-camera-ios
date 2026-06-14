@@ -1,6 +1,6 @@
 # Finite Model Predictions
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -26,11 +26,17 @@ validation belongs at the C++ to Objective-C collection boundary.
 
 ## Verification
 
-- focused project and camera behavior contracts
-- repository and external-directory `make check`
-- hostile include, finite-check, ordering, diagnostic, threshold,
-  documentation, and plan-status mutations
-- generated-artifact, credential-pattern, protected-path, and exact-diff audits
+- Focused project and camera behavior contracts passed with the finite guard,
+  diagnostic, threshold, and validation-before-collection ordering intact.
+- The repository and external-directory `make check` passed in an isolated
+  Git-backed copy, including all 16 workflow mutations; Linux reported the
+  documented static-only boundary because `xcodebuild` is unavailable.
+- Seven hostile finite-prediction mutations were rejected: include,
+  finite-check, ordering, diagnostic, threshold, documentation, and
+  plan-status regressions.
+- Generated-artifact, credential-pattern, protected-path, and exact-diff audits
+  passed before commit while preserving the pre-existing ignored workflow
+  bytecode unchanged.
 
 ## Scope Boundary
 

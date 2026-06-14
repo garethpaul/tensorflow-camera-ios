@@ -19,6 +19,7 @@
 #import "CameraExampleViewController.h"
 
 #include <sys/time.h>
+#include <cmath>
 #include <limits.h>
 
 #include "tensorflow_utils.h"
@@ -448,6 +449,10 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
       NSMutableDictionary *newValues = [NSMutableDictionary dictionary];
       for (int index = 0; index < result_count; index += 1) {
         const float predictionValue = predictions(index);
+        if (!std::isfinite(predictionValue)) {
+          LOG(ERROR) << "Skipping non-finite model prediction";
+          continue;
+        }
         if (predictionValue > 0.05f) {
           std::string label = labels[index];
           NSString *labelObject =

@@ -24,6 +24,7 @@ Priority:
 - Keep camera frame preprocessing faithful to source coordinates and row stride
 - Reject malformed pixel-buffer geometry before frame memory access
 - Keep sampling coordinate arithmetic within validated frame dimensions
+- Keep finite model predictions as the only values admitted to UI state
 - Keep model outputs and labels bounded before rendering predictions
 - Keep missing model or label assets user-visible instead of fatal
 - Keep shared bundle-resource lookup non-fatal for model paths

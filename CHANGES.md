@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-14
+
+- Required finite model predictions before scores enter Objective-C
+  collections, smoothing, sorting, or display state.
+
 ## 2026-06-13
 
 - Promoted sampling coordinate arithmetic before multiplication to prevent

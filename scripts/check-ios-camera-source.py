@@ -22,6 +22,7 @@ CALLBACK_DRAIN_PLAN = DOCS_PLANS / "2026-06-12-capture-callback-drain.md"
 FRAME_LAYOUT_PLAN = DOCS_PLANS / "2026-06-13-frame-layout-validation.md"
 SAMPLING_ARITHMETIC_PLAN = DOCS_PLANS / "2026-06-13-sampling-coordinate-arithmetic.md"
 ROOT_OVERRIDE_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
+FINITE_PREDICTIONS_PLAN = DOCS_PLANS / "2026-06-14-finite-model-predictions.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -76,6 +77,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-13-sampling-coordinate-arithmetic.md is missing")
     if not ROOT_OVERRIDE_PLAN.exists():
         errors.append("docs/plans/2026-06-14-make-root-override-protection.md is missing")
+    if not FINITE_PREDICTIONS_PLAN.exists():
+        errors.append("docs/plans/2026-06-14-finite-model-predictions.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -86,9 +89,20 @@ def docs_plan_checks():
         if "Status: Completed" not in plan or "make check" not in plan:
             errors.append(f"{plan_path.relative_to(ROOT)} must record completed status and make check verification")
 
+    if FINITE_PREDICTIONS_PLAN.exists():
+        finite_plan = FINITE_PREDICTIONS_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "repository and external-directory `make check` passed",
+            "hostile finite-prediction mutations were rejected",
+        ):
+            if evidence not in finite_plan:
+                errors.append(f"{FINITE_PREDICTIONS_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}")
+
     for relative_path in ("README.md", "SECURITY.md", "VISION.md", "CHANGES.md"):
         if "sampling coordinate arithmetic" not in read_text(relative_path).lower():
             errors.append(f"{relative_path} must document sampling coordinate arithmetic")
+        if "finite model predictions" not in read_text(relative_path).lower():
+            errors.append(f"{relative_path} must document finite model predictions")
 
     return errors
 
@@ -172,6 +186,8 @@ def project_checks():
 
     if "docs/plans/2026-06-14-make-root-override-protection.md" not in read_text("README.md"):
         errors.append("README must index Make root override protection evidence")
+    if "docs/plans/2026-06-14-finite-model-predictions.md" not in read_text("README.md"):
+        errors.append("README must index finite model prediction evidence")
 
     return errors
 
@@ -338,6 +354,18 @@ def behavior_checks():
         errors.append("model label rendering must reject failed string conversion")
     if "Skipping invalid UTF-8 model label" not in source:
         errors.append("model label rendering must log skipped invalid labels")
+    if "#include <cmath>" not in source:
+        errors.append("model output handling must include the finite-value predicate")
+    if "if (!std::isfinite(predictionValue))" not in source:
+        errors.append("model output handling must reject non-finite prediction values")
+    if "Skipping non-finite model prediction" not in source:
+        errors.append("model output handling must log skipped non-finite predictions")
+    if "if (predictionValue > 0.05f)" not in source:
+        errors.append("model output handling must preserve the finite prediction display threshold")
+    finite_guard = source.find("if (!std::isfinite(predictionValue))")
+    number_creation = source.find("[NSNumber numberWithFloat:predictionValue]")
+    if finite_guard < 0 or number_creation < 0 or finite_guard > number_creation:
+        errors.append("model output handling must reject non-finite predictions before NSNumber creation")
     if 'LOG(FATAL) << "Couldn\'t load model' in source:
         errors.append("model load failures must not crash with LOG(FATAL)")
     if 'LOG(FATAL) << "Couldn\'t load labels' in source:

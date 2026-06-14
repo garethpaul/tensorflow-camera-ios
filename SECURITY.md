@@ -49,6 +49,8 @@ Helpful reports include:
   row strides before locking or reading frame memory.
 - Camera sampling coordinate arithmetic promotes resize-loop intermediates
   before multiplication and pointer offset calculation.
+- Finite model predictions are required before scores cross into Objective-C
+  collections; malformed non-finite outputs are logged and skipped.
 
 ## Mobile Privacy Notes
 
