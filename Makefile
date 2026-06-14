@@ -2,7 +2,7 @@
 
 PYTHON ?= python3
 XCODEBUILD ?= xcodebuild
-ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 lint:
 	$(PYTHON) "$(ROOT)/scripts/check-ios-camera-source.py" --mode project

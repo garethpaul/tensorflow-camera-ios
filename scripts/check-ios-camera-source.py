@@ -21,6 +21,7 @@ LABEL_ENCODING_PLAN = DOCS_PLANS / "2026-06-12-label-encoding-guard.md"
 CALLBACK_DRAIN_PLAN = DOCS_PLANS / "2026-06-12-capture-callback-drain.md"
 FRAME_LAYOUT_PLAN = DOCS_PLANS / "2026-06-13-frame-layout-validation.md"
 SAMPLING_ARITHMETIC_PLAN = DOCS_PLANS / "2026-06-13-sampling-coordinate-arithmetic.md"
+ROOT_OVERRIDE_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -73,6 +74,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-13-frame-layout-validation.md is missing")
     if not SAMPLING_ARITHMETIC_PLAN.exists():
         errors.append("docs/plans/2026-06-13-sampling-coordinate-arithmetic.md is missing")
+    if not ROOT_OVERRIDE_PLAN.exists():
+        errors.append("docs/plans/2026-06-14-make-root-override-protection.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -143,8 +146,22 @@ def project_checks():
             errors.append(f"project is missing expected setting: {fragment}")
 
     makefile = read_text("Makefile")
+    root_declaration = "override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))"
+    root_assignments = re.findall(r"^(?:override\s+)?ROOT\s*[:+?]?=", makefile, re.MULTILINE)
+    if len(root_assignments) != 1 or makefile.count(root_declaration) != 1:
+        errors.append("Makefile must contain exactly one protected repository-root declaration")
+    tool_and_root_block = "\n".join((
+        "PYTHON ?= python3",
+        "XCODEBUILD ?= xcodebuild",
+        root_declaration,
+    ))
+    if makefile.count(tool_and_root_block) != 1:
+        errors.append("Makefile must keep tool overrides before the protected repository root")
     for fragment in (
-        "ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))",
+        ".PHONY: build check contract-test lint test verify",
+        "build: lint",
+        "verify: lint contract-test test build",
+        "check: verify",
         '"$(ROOT)/scripts/check-ios-camera-source.py"',
         '"$(ROOT)/scripts/test_workflow_contract.py"',
         '"$(ROOT)/app/tensorflow_camera.xcodeproj"',
@@ -152,6 +169,9 @@ def project_checks():
     ):
         if fragment not in makefile:
             errors.append(f"Makefile is missing root-independent fragment: {fragment}")
+
+    if "docs/plans/2026-06-14-make-root-override-protection.md" not in read_text("README.md"):
+        errors.append("README must index Make root override protection evidence")
 
     return errors
 

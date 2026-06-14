@@ -1,6 +1,6 @@
 # Make Root Override Protection
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -53,3 +53,29 @@ and this plan's completed evidence.
 
 This change does not alter Objective-C++, camera lifecycle, sampling, project
 settings, model resources, workflow policy, or generated TensorFlow archives.
+
+## Work Completed
+
+- Marked the repository root as an explicit GNU Make override.
+- Added exact declaration, tool-order, alias, root-path, README, and plan
+  contracts to the project checker.
+- Preserved all camera, project, resource, workflow, and tool behavior.
+
+## Verification Results
+
+- `make check` passed project, behavior, resource-integrity, and all 16 workflow
+  mutation contracts; the build target truthfully reported that local
+  `xcodebuild` is unavailable.
+- The same complete gate passed from an external working directory.
+- All six public aliases passed from both working-directory contexts with
+  hostile environment and command-line `ROOT` assignments, for 24 cases.
+- Explicit Python and Xcode executable overrides remained effective.
+- Eight protected-declaration, duplicate protected/unprotected assignment,
+  placement, alias, path, README, and plan mutations were rejected.
+- Plan-aware correctness, security, testing, maintainability, reliability,
+  native-build, and project-standards review found no actionable findings.
+- Exact diff, protected camera/project/workflow/resource path,
+  generated-artifact, high-confidence secret, and whitespace audits passed.
+- Browser testing is not applicable to this native Objective-C++ camera sample.
+- The pre-existing untracked checker bytecode retained its original timestamp
+  and remains excluded from the explicit-path commit.
