@@ -23,6 +23,7 @@ FRAME_LAYOUT_PLAN = DOCS_PLANS / "2026-06-13-frame-layout-validation.md"
 SAMPLING_ARITHMETIC_PLAN = DOCS_PLANS / "2026-06-13-sampling-coordinate-arithmetic.md"
 ROOT_OVERRIDE_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
 FINITE_PREDICTIONS_PLAN = DOCS_PLANS / "2026-06-14-finite-model-predictions.md"
+OUTPUT_DTYPE_PLAN = DOCS_PLANS / "2026-06-14-model-output-dtype-validation.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -79,6 +80,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-14-make-root-override-protection.md is missing")
     if not FINITE_PREDICTIONS_PLAN.exists():
         errors.append("docs/plans/2026-06-14-finite-model-predictions.md is missing")
+    if not OUTPUT_DTYPE_PLAN.exists():
+        errors.append("docs/plans/2026-06-14-model-output-dtype-validation.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -98,11 +101,23 @@ def docs_plan_checks():
             if evidence not in finite_plan:
                 errors.append(f"{FINITE_PREDICTIONS_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}")
 
+    if OUTPUT_DTYPE_PLAN.exists():
+        dtype_plan = OUTPUT_DTYPE_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "Status: Completed",
+            "repository and external-directory `make check` passed",
+            "hostile model-output dtype mutations were rejected",
+        ):
+            if evidence not in dtype_plan:
+                errors.append(f"{OUTPUT_DTYPE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}")
+
     for relative_path in ("README.md", "SECURITY.md", "VISION.md", "CHANGES.md"):
         if "sampling coordinate arithmetic" not in read_text(relative_path).lower():
             errors.append(f"{relative_path} must document sampling coordinate arithmetic")
         if "finite model predictions" not in read_text(relative_path).lower():
             errors.append(f"{relative_path} must document finite model predictions")
+        if "model output dtype validation" not in read_text(relative_path).lower():
+            errors.append(f"{relative_path} must document model output dtype validation")
 
     return errors
 
@@ -188,6 +203,8 @@ def project_checks():
         errors.append("README must index Make root override protection evidence")
     if "docs/plans/2026-06-14-finite-model-predictions.md" not in read_text("README.md"):
         errors.append("README must index finite model prediction evidence")
+    if "docs/plans/2026-06-14-model-output-dtype-validation.md" not in read_text("README.md"):
+        errors.append("README must index model output dtype validation evidence")
 
     return errors
 
@@ -354,6 +371,14 @@ def behavior_checks():
         errors.append("model label rendering must reject failed string conversion")
     if "Skipping invalid UTF-8 model label" not in source:
         errors.append("model label rendering must log skipped invalid labels")
+    if "if (output->dtype() != tensorflow::DT_FLOAT)" not in source:
+        errors.append("model output handling must reject non-float prediction tensors")
+    if "Skipping model output with unexpected dtype" not in source:
+        errors.append("model output handling must log skipped non-float tensors")
+    dtype_guard = source.find("if (output->dtype() != tensorflow::DT_FLOAT)")
+    typed_flatten = source.find("output->flat<float>()")
+    if dtype_guard < 0 or typed_flatten < 0 or dtype_guard > typed_flatten:
+        errors.append("model output handling must validate dtype before typed tensor access")
     if "#include <cmath>" not in source:
         errors.append("model output handling must include the finite-value predicate")
     if "if (!std::isfinite(predictionValue))" not in source:

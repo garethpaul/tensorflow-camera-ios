@@ -1,6 +1,6 @@
 # Model Output Dtype Validation
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -46,6 +46,19 @@ before a typed tensor accessor can assert or interpret incompatible storage.
   and plan-status mutations
 - generated-artifact, credential-pattern, protected-path, exact-diff, and
   staged-path audits
+
+## Verification Results
+
+- The focused camera behavior contract passed with dtype validation ordered
+  before TensorFlow float access.
+- The repository and external-directory `make check` passed project, behavior,
+  resource-integrity, and all 16 workflow mutation contracts with the
+  documented static-only Linux boundary.
+- Six hostile model-output dtype mutations were rejected across predicate,
+  ordering, diagnostic, typed access, maintained documentation, and completed
+  plan evidence.
+- Generated-artifact, credential-pattern, protected-path, exact-diff,
+  staged-path, and whitespace audits passed.
 
 ## Risks
 

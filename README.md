@@ -80,9 +80,10 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   label lines before prediction rendering. Prediction rendering also skips and
   logs labels that cannot be converted from UTF-8 instead of inserting a nil
   dictionary key. Finite model predictions are required before scores enter
-  Objective-C collections, smoothing, sorting, or display state. They
-  also preserve manual cleanup of controller-owned prediction and speech state
-  and verify SHA-256 digests for the graph, labels, and sample image.
+  Objective-C collections, smoothing, sorting, or display state. Model output dtype validation
+  rejects non-float tensors before typed prediction access. They also preserve
+  manual cleanup of controller-owned prediction and speech state and verify
+  SHA-256 digests for the graph, labels, and sample image.
   When
   `xcodebuild` is installed, the `build` target also attempts an iOS simulator
   build with code signing disabled.
@@ -153,6 +154,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   repository-root selection across all Make aliases.
 - See `docs/plans/2026-06-14-finite-model-predictions.md` for inference-output
   validation before prediction UI state.
+- See `docs/plans/2026-06-14-model-output-dtype-validation.md` for guarded
+  TensorFlow prediction tensor access.
 
 ## Contributing
 

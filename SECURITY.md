@@ -51,6 +51,8 @@ Helpful reports include:
   before multiplication and pointer offset calculation.
 - Finite model predictions are required before scores cross into Objective-C
   collections; malformed non-finite outputs are logged and skipped.
+- Model output dtype validation rejects incompatible prediction tensors before
+  TensorFlow typed access or Objective-C publication.
 
 ## Mobile Privacy Notes
 

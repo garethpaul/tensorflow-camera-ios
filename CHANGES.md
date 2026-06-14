@@ -2,6 +2,7 @@
 
 ## 2026-06-14
 
+- Added model output dtype validation before TensorFlow float prediction access.
 - Required finite model predictions before scores enter Objective-C
   collections, smoothing, sorting, or display state.
 

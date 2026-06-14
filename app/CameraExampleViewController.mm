@@ -440,34 +440,38 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
       LOG(ERROR) << "No labels loaded for model predictions";
     } else {
       tensorflow::Tensor *output = &outputs.front();
-      auto predictions = output->flat<float>();
-      const int prediction_count = (int)predictions.size();
-      const int label_count = (int)labels.size();
-      const int result_count =
-          prediction_count < label_count ? prediction_count : label_count;
+      if (output->dtype() != tensorflow::DT_FLOAT) {
+        LOG(ERROR) << "Skipping model output with unexpected dtype";
+      } else {
+        auto predictions = output->flat<float>();
+        const int prediction_count = (int)predictions.size();
+        const int label_count = (int)labels.size();
+        const int result_count =
+            prediction_count < label_count ? prediction_count : label_count;
 
-      NSMutableDictionary *newValues = [NSMutableDictionary dictionary];
-      for (int index = 0; index < result_count; index += 1) {
-        const float predictionValue = predictions(index);
-        if (!std::isfinite(predictionValue)) {
-          LOG(ERROR) << "Skipping non-finite model prediction";
-          continue;
-        }
-        if (predictionValue > 0.05f) {
-          std::string label = labels[index];
-          NSString *labelObject =
-              [NSString stringWithUTF8String:label.c_str()];
-          if (!labelObject) {
-            LOG(ERROR) << "Skipping invalid UTF-8 model label";
+        NSMutableDictionary *newValues = [NSMutableDictionary dictionary];
+        for (int index = 0; index < result_count; index += 1) {
+          const float predictionValue = predictions(index);
+          if (!std::isfinite(predictionValue)) {
+            LOG(ERROR) << "Skipping non-finite model prediction";
             continue;
           }
-          NSNumber *valueObject = [NSNumber numberWithFloat:predictionValue];
-          [newValues setObject:valueObject forKey:labelObject];
+          if (predictionValue > 0.05f) {
+            std::string label = labels[index];
+            NSString *labelObject =
+                [NSString stringWithUTF8String:label.c_str()];
+            if (!labelObject) {
+              LOG(ERROR) << "Skipping invalid UTF-8 model label";
+              continue;
+            }
+            NSNumber *valueObject = [NSNumber numberWithFloat:predictionValue];
+            [newValues setObject:valueObject forKey:labelObject];
+          }
         }
+        dispatch_async(dispatch_get_main_queue(), ^(void) {
+          [self setPredictionValues:newValues];
+        });
       }
-      dispatch_async(dispatch_get_main_queue(), ^(void) {
-        [self setPredictionValues:newValues];
-      });
     }
   }
   CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
