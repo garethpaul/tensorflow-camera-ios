@@ -148,6 +148,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   draining of already-enqueued camera callbacks during teardown.
 - See `docs/plans/2026-06-13-sampling-coordinate-arithmetic.md` for overflow-safe
   frame sampling coordinate arithmetic.
+- See `docs/plans/2026-06-14-make-root-override-protection.md` for authoritative
+  repository-root selection across all Make aliases.
 
 ## Contributing
 
