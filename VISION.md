@@ -39,6 +39,8 @@ Priority:
 - Keep hosted verification read-only, credential-free, pinned, and structurally
   protected against workflow policy regressions
 - Keep graph, label, and sample-image integrity deterministic
+- Keep the reviewed upstream credential fixture byte-pinned and reject every
+  additional private-key marker
 - Treat Bazel, TensorFlow, and Objective-C++ setup as legacy context
 
 Next priorities:
@@ -46,6 +48,7 @@ Next priorities:
 - Document exact build tool versions and model download expectations
 - Add a no-camera test path for image preprocessing and label output
 - Clarify licensing/provenance for downloaded model assets
+- Keep vendored test credential provenance synchronized with TensorFlow upstream
 - Modernize ML dependencies only in a dedicated compatibility pass
 
 Contribution rules:

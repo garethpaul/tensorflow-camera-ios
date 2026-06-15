@@ -44,7 +44,10 @@
 
 ## Safety and gotchas
 
-- No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
+- Preserve the reviewed upstream credential fixture only at
+  `app/platform/cloud/testdata/service_account_credentials.json` with its
+  pinned digest and fake identity; do not add or allow any other key-shaped
+  fixture, application credential, token, or local secret.
 - This looks like an Apple platform project or sample. Xcode, Swift, CocoaPods, and deployment target versions may need to match the original project era.
 - A clean checkout does not include the generated TensorFlow/protobuf archives
   required for a full Xcode link; do not report the SDK-free gate as an iOS

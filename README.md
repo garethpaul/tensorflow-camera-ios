@@ -83,7 +83,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Objective-C collections, smoothing, sorting, or display state. Model output dtype validation
   rejects non-float tensors before typed prediction access. They also preserve
   manual cleanup of controller-owned prediction and speech state and verify
-  SHA-256 digests for the graph, labels, and sample image.
+  SHA-256 digests for the graph, labels, sample image, and reviewed upstream
+  credential fixture used by vendored TensorFlow OAuth tests. Repository scans
+  reject private-key markers at every other path.
   When
   `xcodebuild` is installed, the `build` target also attempts an iOS simulator
   build with code signing disabled.
@@ -104,7 +106,11 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 ## Configuration and Secrets
 
-- No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
+- The reviewed upstream credential fixture under
+  `app/platform/cloud/testdata/` is public TensorFlow testdata with fake service
+  account identifiers and an exact pinned digest. It is not application
+  configuration and is the only allowed key-shaped fixture; keep all real
+  secrets and any additional credential fixtures out of git.
 
 ## Security and Privacy Notes
 
@@ -156,6 +162,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   validation before prediction UI state.
 - See `docs/plans/2026-06-14-model-output-dtype-validation.md` for guarded
   TensorFlow prediction tensor access.
+- See `docs/plans/2026-06-15-upstream-credential-fixture-provenance.md` for the
+  reviewed TensorFlow OAuth test fixture path, digest, fake identity, and
+  repository-wide private-key marker policy.
 
 ## Contributing
 

@@ -53,6 +53,9 @@ Helpful reports include:
   collections; malformed non-finite outputs are logged and skipped.
 - Model output dtype validation rejects incompatible prediction tensors before
   TensorFlow typed access or Objective-C publication.
+- The reviewed upstream credential fixture is the sole allowed key-shaped file.
+  Project checks pin its TensorFlow testdata SHA-256 and fake service-account
+  identity, and reject private-key PEM markers at every other repository path.
 
 ## Mobile Privacy Notes
 
@@ -61,6 +64,11 @@ If this project requests device permissions such as location, camera, microphone
 ## Dependency and Supply Chain Security
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
+
+The reviewed TensorFlow OAuth fixture is a narrow upstream-test compatibility
+exception, not permission to commit application credentials or additional test
+keys. Any change to its path, digest, or fake identity requires explicit
+upstream provenance review.
 
 ## Safe Research Guidelines
 

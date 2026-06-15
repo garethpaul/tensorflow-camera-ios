@@ -1,6 +1,6 @@
 # Upstream Credential Fixture Provenance
 
-## Status: Planned
+## Status: Completed
 
 ## Summary
 
@@ -36,8 +36,8 @@ upstream digest, and fake identity, then reject all other key-shaped content.
 
 - **R1:** The existing credential fixture must remain byte-for-byte unchanged at
   SHA-256 `c7d61aaf782924787e979bb3b64e8ccdce81b838d03c44f5dce746e3365ff2f9`.
-- **R2:** Repository file scanning must reject RSA, generic, EC, or OpenSSH
-  private-key PEM markers outside the exact reviewed fixture path.
+- **R2:** Repository file scanning must reject RSA, generic, EC, DSA, encrypted,
+  OpenSSH, or PGP private-key markers outside the exact reviewed fixture path.
 - **R3:** The reviewed JSON must parse and retain `type: service_account`,
   `project_id: fake_project_id`, `private_key_id: fake_key_id`, and the fake
   TensorFlow test service-account email.
@@ -113,3 +113,20 @@ not add any other credential or private-key fixture.
 - Vendored OAuth tests reference this fixture through
   `app/platform/cloud/BUILD`, `app/platform/cloud/oauth_client_test.cc`, and
   `app/platform/cloud/google_auth_provider_test.cc`.
+
+## Completion Evidence
+
+- The focused credential policy suite passed the reviewed fixture and rejected
+  digest drift, fake-identity drift, relocation, an additional key marker, and
+  a marker split across streaming scan chunks.
+- The repository and external-directory `make check` passed project, behavior,
+  credential-fixture, resource-integrity, and all 16 workflow mutation checks
+  with the documented static-only Linux boundary.
+- Ten hostile credential-fixture mutations were rejected across digest,
+  metadata, path, marker scan, allowlist, stream overlap, test registration,
+  documentation, and completed-plan contracts.
+- The protected fixture path and digest remained unchanged from the stack base.
+- The generated-artifact and credential-pattern audits passed with no key marker
+  outside the reviewed upstream fixture.
+- No native iOS build, Bazel OAuth test, network request, real credential, or
+  deployment was exercised.

@@ -12,6 +12,7 @@ test:
 
 contract-test:
 	$(PYTHON) "$(ROOT)/scripts/test_workflow_contract.py"
+	$(PYTHON) "$(ROOT)/scripts/test_credential_fixture_policy.py"
 
 build: lint
 	@if command -v "$(XCODEBUILD)" >/dev/null 2>&1; then \

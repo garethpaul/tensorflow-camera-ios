@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-15
+
+- Pinned the reviewed upstream credential fixture by path, digest, and fake
+  identity while rejecting private-key markers elsewhere in the repository.
+
 ## 2026-06-14
 
 - Added model output dtype validation before TensorFlow float prediction access.

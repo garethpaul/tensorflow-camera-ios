@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import hashlib
+import json
 import re
 import sys
 from pathlib import Path
@@ -24,12 +25,29 @@ SAMPLING_ARITHMETIC_PLAN = DOCS_PLANS / "2026-06-13-sampling-coordinate-arithmet
 ROOT_OVERRIDE_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
 FINITE_PREDICTIONS_PLAN = DOCS_PLANS / "2026-06-14-finite-model-predictions.md"
 OUTPUT_DTYPE_PLAN = DOCS_PLANS / "2026-06-14-model-output-dtype-validation.md"
+CREDENTIAL_FIXTURE_PLAN = DOCS_PLANS / "2026-06-15-upstream-credential-fixture-provenance.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
     "app/data/imagenet_comp_graph_label_strings.txt": "da2a31ecfe9f212ae8dd07379b11a74cb2d7a110eba12c5fc8c862a65b8e6606",
     "app/data/grace_hopper.jpg": "e1f57e98cf38076c0f9a058d74ffddf90f20453e436033784606b63c8ed2e49a",
 }
+CREDENTIAL_FIXTURE = "app/platform/cloud/testdata/service_account_credentials.json"
+CREDENTIAL_FIXTURE_SHA256 = "c7d61aaf782924787e979bb3b64e8ccdce81b838d03c44f5dce746e3365ff2f9"
+PRIVATE_KEY_PEM_LABELS = (
+    "RSA PRIVATE KEY",
+    "PRIVATE KEY",
+    "EC PRIVATE KEY",
+    "DSA PRIVATE KEY",
+    "ENCRYPTED PRIVATE KEY",
+    "OPENSSH PRIVATE KEY",
+    "PGP PRIVATE KEY BLOCK",
+)
+PRIVATE_KEY_PEM_MARKERS = tuple(
+    ("-----BEGIN " + label + "-----").encode("ascii")
+    for label in PRIVATE_KEY_PEM_LABELS
+)
+PRIVATE_KEY_MARKER_OVERLAP = max(len(marker) for marker in PRIVATE_KEY_PEM_MARKERS) - 1
 
 
 def read_text(relative_path):
@@ -46,6 +64,7 @@ def require_paths():
         "app/data/tensorflow_inception_graph.pb",
         "app/data/imagenet_comp_graph_label_strings.txt",
         "app/data/grace_hopper.jpg",
+        CREDENTIAL_FIXTURE,
     ):
         if not (ROOT / relative_path).exists():
             errors.append(f"missing required file: {relative_path}")
@@ -82,6 +101,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-14-finite-model-predictions.md is missing")
     if not OUTPUT_DTYPE_PLAN.exists():
         errors.append("docs/plans/2026-06-14-model-output-dtype-validation.md is missing")
+    if not CREDENTIAL_FIXTURE_PLAN.exists():
+        errors.append("docs/plans/2026-06-15-upstream-credential-fixture-provenance.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -111,6 +132,20 @@ def docs_plan_checks():
             if evidence not in dtype_plan:
                 errors.append(f"{OUTPUT_DTYPE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}")
 
+    if CREDENTIAL_FIXTURE_PLAN.exists():
+        fixture_plan = CREDENTIAL_FIXTURE_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "Status: Completed",
+            "repository and external-directory `make check` passed",
+            "hostile credential-fixture mutations were rejected",
+            "protected fixture path and digest remained unchanged",
+            "generated-artifact and credential-pattern audits passed",
+        ):
+            if evidence not in fixture_plan:
+                errors.append(
+                    f"{CREDENTIAL_FIXTURE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
+                )
+
     for relative_path in ("README.md", "SECURITY.md", "VISION.md", "CHANGES.md"):
         if "sampling coordinate arithmetic" not in read_text(relative_path).lower():
             errors.append(f"{relative_path} must document sampling coordinate arithmetic")
@@ -118,6 +153,8 @@ def docs_plan_checks():
             errors.append(f"{relative_path} must document finite model predictions")
         if "model output dtype validation" not in read_text(relative_path).lower():
             errors.append(f"{relative_path} must document model output dtype validation")
+        if "reviewed upstream credential fixture" not in read_text(relative_path).lower():
+            errors.append(f"{relative_path} must document the reviewed upstream credential fixture")
 
     return errors
 
@@ -156,8 +193,83 @@ def resource_checks():
     return errors
 
 
+def file_contains_private_key_marker(path):
+    overlap = b""
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(64 * 1024), b""):
+            candidate = overlap + chunk
+            if any(marker in candidate for marker in PRIVATE_KEY_PEM_MARKERS):
+                return True
+            overlap = candidate[-PRIVATE_KEY_MARKER_OVERLAP:]
+    return False
+
+
+def credential_fixture_checks():
+    errors = []
+    fixture_path = ROOT / CREDENTIAL_FIXTURE
+    if not fixture_path.is_file():
+        return [f"reviewed upstream credential fixture is missing: {CREDENTIAL_FIXTURE}"]
+
+    actual_hash = hashlib.sha256(fixture_path.read_bytes()).hexdigest()
+    if actual_hash != CREDENTIAL_FIXTURE_SHA256:
+        errors.append(
+            f"reviewed upstream credential fixture hash mismatch: expected "
+            f"{CREDENTIAL_FIXTURE_SHA256}, got {actual_hash}"
+        )
+
+    try:
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        errors.append(f"reviewed upstream credential fixture must be valid UTF-8 JSON: {error}")
+        fixture = {}
+    if not isinstance(fixture, dict):
+        errors.append("reviewed upstream credential fixture must be a JSON object")
+        fixture = {}
+
+    expected_metadata = {
+        "type": "service_account",
+        "project_id": "fake_project_id",
+        "private_key_id": "fake_key_id",
+        "client_email": "fake-test-project.iam.gserviceaccount.com",
+    }
+    for key, expected_value in expected_metadata.items():
+        if fixture.get(key) != expected_value:
+            errors.append(
+                f"reviewed upstream credential fixture must retain fake {key}: {expected_value}"
+            )
+
+    marker_paths = []
+    for path in ROOT.rglob("*"):
+        if not path.is_file():
+            continue
+        relative_path = path.relative_to(ROOT)
+        if ".git" in relative_path.parts:
+            continue
+        try:
+            contains_marker = file_contains_private_key_marker(path)
+        except OSError as error:
+            errors.append(f"unable to inspect repository file for private-key markers: {relative_path}: {error}")
+            continue
+        if contains_marker:
+            marker_paths.append(relative_path.as_posix())
+
+    unexpected_paths = sorted(set(marker_paths) - {CREDENTIAL_FIXTURE})
+    for relative_path in unexpected_paths:
+        errors.append(f"unreviewed private-key marker found in repository file: {relative_path}")
+    if CREDENTIAL_FIXTURE not in marker_paths:
+        errors.append("reviewed upstream credential fixture must remain the sole key-shaped test asset")
+
+    return errors
+
+
 def project_checks():
-    errors = docs_plan_checks() + require_paths() + ci_checks() + resource_checks()
+    errors = (
+        docs_plan_checks()
+        + require_paths()
+        + ci_checks()
+        + resource_checks()
+        + credential_fixture_checks()
+    )
     if errors:
         return errors
 
@@ -186,6 +298,8 @@ def project_checks():
     ))
     if makefile.count(tool_and_root_block) != 1:
         errors.append("Makefile must keep tool overrides before the protected repository root")
+    if '$(PYTHON) "$(ROOT)/scripts/test_credential_fixture_policy.py"' not in makefile:
+        errors.append("Makefile contract-test must run the credential fixture policy tests")
     for fragment in (
         ".PHONY: build check contract-test lint test verify",
         "build: lint",
@@ -205,6 +319,8 @@ def project_checks():
         errors.append("README must index finite model prediction evidence")
     if "docs/plans/2026-06-14-model-output-dtype-validation.md" not in read_text("README.md"):
         errors.append("README must index model output dtype validation evidence")
+    if "docs/plans/2026-06-15-upstream-credential-fixture-provenance.md" not in read_text("README.md"):
+        errors.append("README must index upstream credential fixture provenance evidence")
 
     return errors
 
