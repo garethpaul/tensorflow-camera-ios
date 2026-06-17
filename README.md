@@ -80,8 +80,12 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   label lines before prediction rendering. Prediction rendering also skips and
   logs labels that cannot be converted from UTF-8 instead of inserting a nil
   dictionary key. Finite model predictions are required before scores enter
-  Objective-C collections, smoothing, sorting, or display state. Model output dtype validation
-  rejects non-float tensors before typed prediction access. They also preserve
+  Objective-C collections, smoothing, sorting, or display state. Model prediction
+  range validation also rejects finite values outside the inclusive `[0, 1]`
+  softmax probability range before UI publication. Model output dtype validation
+  rejects non-float tensors before typed prediction access. The portable test
+  target compiles and executes this probability boundary with a local C++11
+  compiler. The checks also preserve
   manual cleanup of controller-owned prediction and speech state and verify
   SHA-256 digests for the graph, labels, sample image, and reviewed upstream
   credential fixture used by vendored TensorFlow OAuth tests. Repository scans
@@ -165,6 +169,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-15-upstream-credential-fixture-provenance.md` for the
   reviewed TensorFlow OAuth test fixture path, digest, fake identity, and
   repository-wide private-key marker policy.
+- See `docs/plans/2026-06-17-model-prediction-range-validation.md` for executable
+  softmax probability boundary validation before prediction UI state.
 
 ## Contributing
 

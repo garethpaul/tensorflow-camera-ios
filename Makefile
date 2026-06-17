@@ -1,6 +1,7 @@
 .PHONY: build check contract-test lint test verify
 
 PYTHON ?= python3
+CXX ?= c++
 XCODEBUILD ?= xcodebuild
 override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
@@ -9,6 +10,7 @@ lint:
 
 test:
 	$(PYTHON) "$(ROOT)/scripts/check-ios-camera-source.py" --mode behavior
+	CXX="$(CXX)" "$(ROOT)/scripts/run-prediction-range-tests.sh"
 
 contract-test:
 	$(PYTHON) "$(ROOT)/scripts/test_workflow_contract.py"

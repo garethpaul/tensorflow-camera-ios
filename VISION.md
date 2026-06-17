@@ -25,6 +25,7 @@ Priority:
 - Reject malformed pixel-buffer geometry before frame memory access
 - Keep sampling coordinate arithmetic within validated frame dimensions
 - Keep finite model predictions as the only values admitted to UI state
+- Keep model prediction range validation ahead of Objective-C publication
 - Keep model output dtype validation ahead of typed prediction access
 - Keep model outputs and labels bounded before rendering predictions
 - Keep missing model or label assets user-visible instead of fatal

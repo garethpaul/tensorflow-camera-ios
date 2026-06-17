@@ -1,6 +1,6 @@
 # Model Prediction Range Validation
 
-## Status: In Progress
+## Status: Completed
 
 ## Context
 
@@ -63,16 +63,19 @@ guard.
 
 ## Verification
 
-- Focused executable C++ prediction boundary test.
-- Focused project and camera behavior source contracts.
-- Repository and external-directory `make check`.
-- Hostile mutations for the helper predicate, inclusive endpoints, controller
-  call, validation ordering, diagnostic, runner, Makefile wiring,
-  documentation, and completed plan evidence.
-- Exact-diff, generated-artifact, credential-pattern, protected-fixture,
-  executable-mode, and staged-path audits.
-- Exact-head hosted contract evidence after push; no native iOS build is
-  claimed because the clean repository lacks generated TensorFlow archives.
+- The focused executable C++ prediction boundary test passed.
+- Focused project and camera behavior source contracts passed.
+- repository and external-directory `make check` passed, including the C++11
+  boundary executable and all workflow and credential-fixture mutations;
+  `xcodebuild` remained unavailable on Linux.
+- Eleven hostile model-prediction range mutations were rejected across helper
+  semantics, inclusive endpoints, controller wiring and ordering, diagnostic,
+  runner, Makefile, documentation, and completed plan evidence.
+- generated-artifact and credential-pattern audits passed together with the
+  protected-fixture, executable-mode, exact-diff, and staged-path audits.
+- Exact-head hosted contract evidence remains required after push; no native
+  iOS build is claimed because the clean repository lacks generated TensorFlow
+  archives.
 
 ## Scope Boundaries
 

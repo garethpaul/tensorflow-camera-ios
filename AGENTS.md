@@ -31,6 +31,8 @@
 - Test-related files detected: `app/common_runtime/constant_folding_test.cc`, `app/common_runtime/device_set_test.cc`, `app/common_runtime/direct_session_test.cc`, `app/common_runtime/direct_session_with_tracking_alloc_test.cc`, `app/common_runtime/function_test.cc`, `app/common_runtime/gpu/gpu_allocator_retry_test.cc`, `app/common_runtime/gpu/gpu_bfc_allocator_test.cc`, `app/common_runtime/gpu/gpu_debug_allocator_test.cc`, `app/common_runtime/gpu/gpu_event_mgr_test.cc`, `app/common_runtime/gpu/gpu_stream_util_test.cc`
 - Start with the narrowest relevant test or Make target, then run `make check` before handing off if the change is not documentation-only.
 - Keep README verification notes in sync when commands, fixtures, or supported toolchains change.
+- Preserve model prediction range validation before Objective-C publication;
+  `make test` executes its framework-independent C++ boundary test.
 - Keep hosted verification read-only and credential-free with immutable action
   pins; update the structural workflow mutations with any intentional policy
   change.

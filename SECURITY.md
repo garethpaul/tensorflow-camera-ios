@@ -51,6 +51,8 @@ Helpful reports include:
   before multiplication and pointer offset calculation.
 - Finite model predictions are required before scores cross into Objective-C
   collections; malformed non-finite outputs are logged and skipped.
+- Model prediction range validation rejects finite softmax values outside the
+  inclusive `[0, 1]` probability range before smoothing or presentation.
 - Model output dtype validation rejects incompatible prediction tensors before
   TensorFlow typed access or Objective-C publication.
 - The reviewed upstream credential fixture is the sole allowed key-shaped file.

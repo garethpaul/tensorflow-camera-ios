@@ -22,6 +22,7 @@
 #include <cmath>
 #include <limits.h>
 
+#include "prediction_validation.h"
 #include "tensorflow_utils.h"
 
 // If you have your own model, modify this to the file name, and make sure
@@ -454,6 +455,10 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
           const float predictionValue = predictions(index);
           if (!std::isfinite(predictionValue)) {
             LOG(ERROR) << "Skipping non-finite model prediction";
+            continue;
+          }
+          if (!tensorflow_camera::IsValidModelPrediction(predictionValue)) {
+            LOG(ERROR) << "Skipping out-of-range model prediction";
             continue;
           }
           if (predictionValue > 0.05f) {

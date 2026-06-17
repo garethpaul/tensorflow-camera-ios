@@ -26,6 +26,7 @@ ROOT_OVERRIDE_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
 FINITE_PREDICTIONS_PLAN = DOCS_PLANS / "2026-06-14-finite-model-predictions.md"
 OUTPUT_DTYPE_PLAN = DOCS_PLANS / "2026-06-14-model-output-dtype-validation.md"
 CREDENTIAL_FIXTURE_PLAN = DOCS_PLANS / "2026-06-15-upstream-credential-fixture-provenance.md"
+PREDICTION_RANGE_PLAN = DOCS_PLANS / "2026-06-17-model-prediction-range-validation.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -60,7 +61,10 @@ def require_paths():
         "app/tensorflow_camera.xcodeproj/project.pbxproj",
         "app/Info.plist",
         "app/CameraExampleViewController.mm",
+        "app/prediction_validation.h",
         "app/CameraExampleAppDelegate.m",
+        "tests/prediction_validation_test.cc",
+        "scripts/run-prediction-range-tests.sh",
         "app/data/tensorflow_inception_graph.pb",
         "app/data/imagenet_comp_graph_label_strings.txt",
         "app/data/grace_hopper.jpg",
@@ -103,6 +107,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-14-model-output-dtype-validation.md is missing")
     if not CREDENTIAL_FIXTURE_PLAN.exists():
         errors.append("docs/plans/2026-06-15-upstream-credential-fixture-provenance.md is missing")
+    if not PREDICTION_RANGE_PLAN.exists():
+        errors.append("docs/plans/2026-06-17-model-prediction-range-validation.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -146,15 +152,31 @@ def docs_plan_checks():
                     f"{CREDENTIAL_FIXTURE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
                 )
 
+    if PREDICTION_RANGE_PLAN.exists():
+        range_plan = PREDICTION_RANGE_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "Status: Completed",
+            "repository and external-directory `make check` passed",
+            "hostile model-prediction range mutations were rejected",
+            "generated-artifact and credential-pattern audits passed",
+        ):
+            if evidence not in range_plan:
+                errors.append(
+                    f"{PREDICTION_RANGE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
+                )
+
     for relative_path in ("README.md", "SECURITY.md", "VISION.md", "CHANGES.md"):
-        if "sampling coordinate arithmetic" not in read_text(relative_path).lower():
+        document = re.sub(r"\s+", " ", read_text(relative_path)).lower()
+        if "sampling coordinate arithmetic" not in document:
             errors.append(f"{relative_path} must document sampling coordinate arithmetic")
-        if "finite model predictions" not in read_text(relative_path).lower():
+        if "finite model predictions" not in document:
             errors.append(f"{relative_path} must document finite model predictions")
-        if "model output dtype validation" not in read_text(relative_path).lower():
+        if "model output dtype validation" not in document:
             errors.append(f"{relative_path} must document model output dtype validation")
-        if "reviewed upstream credential fixture" not in read_text(relative_path).lower():
+        if "reviewed upstream credential fixture" not in document:
             errors.append(f"{relative_path} must document the reviewed upstream credential fixture")
+        if "model prediction range validation" not in document:
+            errors.append(f"{relative_path} must document model prediction range validation")
 
     return errors
 
@@ -293,6 +315,7 @@ def project_checks():
         errors.append("Makefile must contain exactly one protected repository-root declaration")
     tool_and_root_block = "\n".join((
         "PYTHON ?= python3",
+        "CXX ?= c++",
         "XCODEBUILD ?= xcodebuild",
         root_declaration,
     ))
@@ -300,6 +323,8 @@ def project_checks():
         errors.append("Makefile must keep tool overrides before the protected repository root")
     if '$(PYTHON) "$(ROOT)/scripts/test_credential_fixture_policy.py"' not in makefile:
         errors.append("Makefile contract-test must run the credential fixture policy tests")
+    if 'CXX="$(CXX)" "$(ROOT)/scripts/run-prediction-range-tests.sh"' not in makefile:
+        errors.append("Makefile test must execute the model prediction range tests")
     for fragment in (
         ".PHONY: build check contract-test lint test verify",
         "build: lint",
@@ -307,6 +332,7 @@ def project_checks():
         "check: verify",
         '"$(ROOT)/scripts/check-ios-camera-source.py"',
         '"$(ROOT)/scripts/test_workflow_contract.py"',
+        '"$(ROOT)/scripts/run-prediction-range-tests.sh"',
         '"$(ROOT)/app/tensorflow_camera.xcodeproj"',
         "-target CameraExample",
     ):
@@ -321,6 +347,12 @@ def project_checks():
         errors.append("README must index model output dtype validation evidence")
     if "docs/plans/2026-06-15-upstream-credential-fixture-provenance.md" not in read_text("README.md"):
         errors.append("README must index upstream credential fixture provenance evidence")
+    if "docs/plans/2026-06-17-model-prediction-range-validation.md" not in read_text("README.md"):
+        errors.append("README must index model prediction range validation evidence")
+
+    runner = ROOT / "scripts" / "run-prediction-range-tests.sh"
+    if runner.exists() and not runner.stat().st_mode & 0o111:
+        errors.append("model prediction range test runner must be executable")
 
     return errors
 
@@ -332,6 +364,9 @@ def behavior_checks():
 
     source = read_text("app/CameraExampleViewController.mm")
     utils_source = read_text("app/tensorflow_utils.mm")
+    validation_source = read_text("app/prediction_validation.h")
+    validation_test = read_text("tests/prediction_validation_test.cc")
+    validation_runner = read_text("scripts/run-prediction-range-tests.sh")
     teardown_match = re.search(r"- \(void\)teardownAVCapture \{(.*?)\n\}", source, re.DOTALL)
     if not teardown_match:
         errors.append("camera controller teardown method is missing")
@@ -507,6 +542,46 @@ def behavior_checks():
     number_creation = source.find("[NSNumber numberWithFloat:predictionValue]")
     if finite_guard < 0 or number_creation < 0 or finite_guard > number_creation:
         errors.append("model output handling must reject non-finite predictions before NSNumber creation")
+    for fragment in (
+        "inline bool IsValidModelPrediction(float value)",
+        "return value >= 0.0f && value <= 1.0f;",
+    ):
+        if fragment not in validation_source:
+            errors.append(f"model prediction range helper is missing: {fragment}")
+    for fragment in (
+        'ExpectValidation(0.0f, true, "zero is a valid inclusive endpoint")',
+        'ExpectValidation(1.0f, true, "one is a valid inclusive endpoint")',
+        'ExpectValidation(-0.01f, false, "negative predictions are rejected")',
+        'ExpectValidation(1.01f, false, "predictions above one are rejected")',
+        "std::numeric_limits<float>::max()",
+        "std::numeric_limits<float>::quiet_NaN()",
+        'Prediction range tests passed',
+    ):
+        if fragment not in validation_test:
+            errors.append(f"model prediction range executable test is missing: {fragment}")
+    for fragment in (
+        '"${CXX:-c++}" -std=c++11 -Wall -Wextra -Werror',
+        '"$ROOT/tests/prediction_validation_test.cc"',
+        '"$TEMP_DIR/prediction_validation_test"',
+        "trap 'rm -rf \"$TEMP_DIR\"' EXIT HUP INT TERM",
+    ):
+        if fragment not in validation_runner:
+            errors.append(f"model prediction range test runner is missing: {fragment}")
+    range_call = "if (!tensorflow_camera::IsValidModelPrediction(predictionValue))"
+    if '#include "prediction_validation.h"' not in source:
+        errors.append("camera controller must include shared model prediction range validation")
+    if range_call not in source:
+        errors.append("camera controller must reject out-of-range model predictions")
+    if "Skipping out-of-range model prediction" not in source:
+        errors.append("camera controller must log skipped out-of-range model predictions")
+    range_guard = source.find(range_call)
+    threshold = source.find("if (predictionValue > 0.05f)")
+    if min(finite_guard, range_guard, threshold, number_creation) < 0 or not (
+        finite_guard < range_guard < threshold < number_creation
+    ):
+        errors.append(
+            "model prediction validation must order finite, unit-range, threshold, and collection checks"
+        )
     if 'LOG(FATAL) << "Couldn\'t load model' in source:
         errors.append("model load failures must not crash with LOG(FATAL)")
     if 'LOG(FATAL) << "Couldn\'t load labels' in source:

@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-17
+
+- Added executable model prediction range validation so malformed finite
+  softmax values cannot reach smoothing or percentage presentation.
+
 ## 2026-06-15
 
 - Pinned the reviewed upstream credential fixture by path, digest, and fake
