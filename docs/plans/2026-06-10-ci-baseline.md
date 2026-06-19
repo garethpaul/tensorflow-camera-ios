@@ -12,28 +12,38 @@ TensorFlow dependencies, which are unavailable on a standard Linux runner.
 ## Objectives
 
 - Run the portable source and project contracts on pushes and pull requests.
-- Keep the workflow least-privilege and bounded.
+- Keep the workflow least-privilege, credential-free, and bounded.
 - Pin third-party actions to immutable commits backed by Node 24 runtimes.
+- Test workflow policy structurally without adding parser dependencies.
 - Make the Linux gate's limits explicit rather than implying an iOS build.
 
 ## Work Completed
 
 - Added `.github/workflows/check.yml` for pushes to `master`, pull requests,
   and manual runs.
-- Granted only read access to repository contents and set a five-minute job
-  timeout.
+- Granted only read access to repository contents, disabled checkout credential
+  persistence, enabled concurrency cancellation, and set a five-minute timeout.
 - Pinned checkout and Python setup actions to immutable Node 24 commits.
-- Ran the existing `make check` entry point with Python 3.12.
-- Extended the project checker to enforce the workflow's security and runtime
-  contract.
+- Ran the existing `make check` entry point with Python 3.12 on Ubuntu 24.04.
+- Added dependency-free structural validation and 16 hostile mutations covering
+  credentials, permissions, triggers, actions, runtime bounds, Python, and the
+  required gate command.
+- Added SHA-256 resource checks, root-independent Make targets, and the correct
+  optional Xcode target while documenting its absent generated archives.
 - Documented the hosted baseline in README, SECURITY, VISION, and CHANGES.
 
 ## Verification
 
-- `python3 -m py_compile scripts/check-ios-camera-source.py`
+- `python3 -B scripts/test_workflow_contract.py`
 - `python3 scripts/check-ios-camera-source.py --mode project`
 - `python3 scripts/check-ios-camera-source.py --mode behavior`
+- `make lint`
+- `make contract-test`
+- `make test`
+- `make build`
 - `make check`
+- `make -f /path/to/tensorflow-camera-ios/Makefile check` outside the repository
+- negative resource, teardown-order, and workflow-policy mutations
 - `git diff --check`
 
 The Linux job validates portable source, asset, documentation, and workflow

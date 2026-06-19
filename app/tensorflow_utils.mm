@@ -129,7 +129,7 @@ tensorflow::Status LoadModel(NSString* file_name, NSString* file_type,
     LOG(ERROR) << "Could not create TensorFlow Session: " << session_status;
     return session_status;
   }
-  session->reset(session_pointer);
+  std::unique_ptr<tensorflow::Session> new_session(session_pointer);
 
   tensorflow::GraphDef tensorflow_graph;
 
@@ -147,11 +147,13 @@ tensorflow::Status LoadModel(NSString* file_name, NSString* file_type,
     return tensorflow::errors::NotFound([model_path UTF8String]);
   }
 
-  tensorflow::Status create_status = (*session)->Create(tensorflow_graph);
+  tensorflow::Status create_status = new_session->Create(tensorflow_graph);
   if (!create_status.ok()) {
     LOG(ERROR) << "Could not create TensorFlow Graph: " << create_status;
     return create_status;
   }
+
+  session->reset(new_session.release());
 
   return tensorflow::Status::OK();
 }
@@ -167,10 +169,10 @@ tensorflow::Status LoadMemoryMappedModel(
     return tensorflow::errors::NotFound([file_name UTF8String],
                                         [file_type UTF8String]);
   }
-  memmapped_env->reset(
+  std::unique_ptr<tensorflow::MemmappedEnv> new_memmapped_env(
       new tensorflow::MemmappedEnv(tensorflow::Env::Default()));
   tensorflow::Status mmap_status =
-      (memmapped_env->get())->InitializeFromFile([network_path UTF8String]);
+      new_memmapped_env->InitializeFromFile([network_path UTF8String]);
   if (!mmap_status.ok()) {
     LOG(ERROR) << "MMap failed with " << mmap_status.error_message();
     return mmap_status;
@@ -178,7 +180,7 @@ tensorflow::Status LoadMemoryMappedModel(
 
   tensorflow::GraphDef tensorflow_graph;
   tensorflow::Status load_graph_status = ReadBinaryProto(
-      memmapped_env->get(),
+      new_memmapped_env.get(),
       tensorflow::MemmappedFileSystem::kMemmappedPackageDefaultGraphDef,
       &tensorflow_graph);
   if (!load_graph_status.ok()) {
@@ -194,7 +196,7 @@ tensorflow::Status LoadMemoryMappedModel(
   options.config.mutable_graph_options()
       ->mutable_optimizer_options()
       ->set_opt_level(::tensorflow::OptimizerOptions::L0);
-  options.env = memmapped_env->get();
+  options.env = new_memmapped_env.get();
 
   tensorflow::Session* session_pointer = nullptr;
   tensorflow::Status session_status =
@@ -203,14 +205,16 @@ tensorflow::Status LoadMemoryMappedModel(
     LOG(ERROR) << "Could not create TensorFlow Session: " << session_status;
     return session_status;
   }
+  std::unique_ptr<tensorflow::Session> new_session(session_pointer);
 
-  tensorflow::Status create_status = session_pointer->Create(tensorflow_graph);
+  tensorflow::Status create_status = new_session->Create(tensorflow_graph);
   if (!create_status.ok()) {
     LOG(ERROR) << "Could not create TensorFlow Graph: " << create_status;
     return create_status;
   }
 
-  session->reset(session_pointer);
+  session->reset(new_session.release());
+  memmapped_env->reset(new_memmapped_env.release());
 
   return tensorflow::Status::OK();
 }

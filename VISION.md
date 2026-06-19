@@ -22,15 +22,26 @@ Priority:
 - Keep freeze/resume controls fail-closed when capture setup is unavailable
 - Keep front/back camera switching fail-closed when replacement inputs fail
 - Keep camera frame preprocessing faithful to source coordinates and row stride
+- Reject malformed pixel-buffer geometry before frame memory access
+- Keep sampling coordinate arithmetic within validated frame dimensions
+- Keep finite model predictions as the only values admitted to UI state
+- Keep model prediction range validation ahead of Objective-C publication
+- Keep model output dtype validation ahead of typed prediction access
 - Keep model outputs and labels bounded before rendering predictions
 - Keep missing model or label assets user-visible instead of fatal
 - Keep shared bundle-resource lookup non-fatal for model paths
 - Keep label file loading fail-closed before prediction rendering
+- Keep invalid label encodings from reaching prediction UI collections
 - Keep manually retained camera-controller state released during teardown
 - Stop capture callbacks and clear borrowed session state during teardown
+- Drain in-flight camera callbacks without self-deadlocking during teardown
 - Keep completed maintenance plans under `docs/plans`
 - Keep the SDK-free `make check` baseline running in GitHub Actions
+- Keep hosted verification read-only, credential-free, pinned, and structurally
+  protected against workflow policy regressions
 - Keep graph, label, and sample-image integrity deterministic
+- Keep the reviewed upstream credential fixture byte-pinned and reject every
+  additional private-key marker
 - Treat Bazel, TensorFlow, and Objective-C++ setup as legacy context
 
 Next priorities:
@@ -38,6 +49,7 @@ Next priorities:
 - Document exact build tool versions and model download expectations
 - Add a no-camera test path for image preprocessing and label output
 - Clarify licensing/provenance for downloaded model assets
+- Keep vendored test credential provenance synchronized with TensorFlow upstream
 - Modernize ML dependencies only in a dedicated compatibility pass
 
 Contribution rules:

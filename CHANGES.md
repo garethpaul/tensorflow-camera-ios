@@ -1,5 +1,45 @@
 # Changes
 
+## 2026-06-19
+
+- Corrected ARGB/BGRA camera bytes to TensorFlow RGB order, added symmetric
+  center cropping, and rejected truncated or overflow-prone frame layouts.
+- Made capture-session ownership explicit and made TensorFlow model loading
+  transactional so failed graph creation cannot leak or publish a session.
+- Added host-native frame preprocessing tests and hostile mutation coverage.
+- Isolated Xcode products from the source tree so the default `app/build`
+  directory cannot collide with the tracked `app/BUILD` file on macOS.
+
+## 2026-06-17
+
+- Added executable model prediction range validation so malformed finite
+  softmax values cannot reach smoothing or percentage presentation.
+
+## 2026-06-15
+
+- Pinned the reviewed upstream credential fixture by path, digest, and fake
+  identity while rejecting private-key markers elsewhere in the repository.
+
+## 2026-06-14
+
+- Added model output dtype validation before TensorFlow float prediction access.
+- Required finite model predictions before scores enter Objective-C
+  collections, smoothing, sorting, or display state.
+
+## 2026-06-13
+
+- Promoted sampling coordinate arithmetic before multiplication to prevent
+  signed overflow in camera frame pointer offsets.
+- Rejected zero, oversized, and undersized-stride camera frame layouts before
+  locking Core Video memory or entering TensorFlow preprocessing.
+
+## 2026-06-12
+
+- Drained already-enqueued camera callbacks after delegate detachment and before
+  resource release, with queue identity preventing synchronous self-deadlock.
+- Rejected invalid UTF-8 model labels before Objective-C dictionary insertion,
+  replacing deprecated unchecked C-string conversion.
+
 ## 2026-06-10
 
 - Stopped capture and detached video callbacks before queue teardown, then
@@ -12,8 +52,10 @@
   generated TensorFlow/protobuf archive prerequisites.
 - Added a least-privilege GitHub Actions workflow that runs `make check` for
   the static camera baseline with commit-pinned Node 24 actions and a bounded
-  runtime.
-- Extended project checks to require the CI workflow and completed CI plan.
+  runtime. Checkout credentials are not persisted.
+- Added dependency-free structural workflow tests that reject duplicate,
+  relocated, or contradictory credentials and other policy regressions.
+- Extended project checks to require the CI workflow and completed CI plans.
 
 ## 2026-06-09
 

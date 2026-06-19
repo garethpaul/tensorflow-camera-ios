@@ -3,6 +3,11 @@
 <!-- README-OVERVIEW-IMAGE -->
 ![Project overview](docs/readme-overview.svg)
 
+## Device Preview
+
+<!-- DEVICE-PREVIEW-IMAGE -->
+![Device preview](docs/device-preview.svg)
+
 ## Overview
 
 `garethpaul/tensorflow-camera-ios` is an Apple platform application or Swift sample. A tensorflow camera for iOS.
@@ -60,24 +65,43 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   model output/label bounds. They also require still-image and video-data
   output setup failures to fail closed before capture starts, and freeze/resume
   actions to fail closed when capture setup is unavailable.
-  Capture teardown checks require the session to stop and the sample delegate
-  to detach before queue release, then clear the borrowed session pointer.
-  Frame preprocessing checks also preserve source `x`/`y` coordinate mapping
-  and `CVPixelBuffer` row-stride addressing. The checks guard missing model or
-  label assets from becoming fatal launch crashes, including the shared
+  Capture teardown checks require the session to stop, the sample delegate to
+  detach, and already-enqueued callbacks to drain before queue release, then
+  release the owned session. Queue identity avoids a synchronous
+  self-deadlock if cleanup is already executing on the callback queue.
+  Frame preprocessing checks center-crop portrait and landscape frames, convert
+  supported ARGB/BGRA bytes to TensorFlow RGB order, and preserve
+  `CVPixelBuffer` row-stride addressing while rejecting planar, zero,
+  oversized, undersized-stride, truncated, or overflow-prone layouts before
+  inference. Host-native C++ tests and hostile mutations exercise channel,
+  crop, byte-bound, and arithmetic invariants. The checks guard
+  missing model or label assets from becoming fatal launch crashes, including the shared
   bundle-resource lookup used by plain and memory-mapped model loading. Label
   loading also fails early when the labels file cannot be opened and skips empty
-  label lines before prediction rendering. They
-  also preserve manual cleanup of controller-owned prediction and speech state
-  and verify SHA-256 digests for the graph, labels, and sample image.
+  label lines before prediction rendering. Prediction rendering also skips and
+  logs labels that cannot be converted from UTF-8 instead of inserting a nil
+  dictionary key. Finite model predictions are required before scores enter
+  Objective-C collections, smoothing, sorting, or display state. Model prediction
+  range validation also rejects finite values outside the inclusive `[0, 1]`
+  softmax probability range before UI publication. Model output dtype validation
+  rejects non-float tensors before typed prediction access. The portable test
+  target compiles and executes this probability boundary with a local C++11
+  compiler. The checks also preserve
+  manual cleanup of controller-owned prediction and speech state and verify
+  SHA-256 digests for the graph, labels, sample image, and reviewed upstream
+  credential fixture used by vendored TensorFlow OAuth tests. Repository scans
+  reject private-key markers at every other path.
   When
   `xcodebuild` is installed, the `build` target also attempts an iOS simulator
-  build with code signing disabled.
+  build with code signing disabled and keeps all products in a temporary
+  directory outside the case-sensitive `app/BUILD` source path.
 - Static project checks also require completed canonical plans under `docs/plans`.
 - GitHub Actions runs the same `make check` baseline on fixed Ubuntu 24.04 for
   pushes and pull requests without requiring Xcode. The workflow has read-only
-  repository permissions, concurrency cancellation, a five-minute timeout,
-  and commit-pinned Node 24 actions.
+  repository permissions, credential-free checkout, concurrency cancellation,
+  a five-minute timeout, and commit-pinned Node 24 actions. Dependency-free
+  mutation tests reject duplicate, relocated, or contradictory credential
+  settings and other workflow policy regressions.
 - Full Xcode linking still requires regenerated TensorFlow/protobuf static
   archives and replacement of developer-local search paths in the legacy
   project; those generated dependencies are not checked into this repository.
@@ -88,7 +112,11 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 ## Configuration and Secrets
 
-- No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
+- The reviewed upstream credential fixture under
+  `app/platform/cloud/testdata/` is public TensorFlow testdata with fake service
+  account identifiers and an exact pinned digest. It is not application
+  configuration and is the only allowed key-shaped fixture; keep all real
+  secrets and any additional credential fixtures out of git.
 
 ## Security and Privacy Notes
 
@@ -130,6 +158,23 @@ When the required SDK or runtime is unavailable, use static checks and source re
   sample-image integrity verification.
 - See `docs/plans/2026-06-10-capture-teardown-order.md` for ordered capture
   callback shutdown and session pointer cleanup.
+- See `docs/plans/2026-06-12-capture-callback-drain.md` for deadlock-safe
+  draining of already-enqueued camera callbacks during teardown.
+- See `docs/plans/2026-06-13-sampling-coordinate-arithmetic.md` for overflow-safe
+  frame sampling coordinate arithmetic.
+- See `docs/plans/2026-06-14-make-root-override-protection.md` for authoritative
+  repository-root selection across all Make aliases.
+- See `docs/plans/2026-06-14-finite-model-predictions.md` for inference-output
+  validation before prediction UI state.
+- See `docs/plans/2026-06-14-model-output-dtype-validation.md` for guarded
+  TensorFlow prediction tensor access.
+- See `docs/plans/2026-06-15-upstream-credential-fixture-provenance.md` for the
+  reviewed TensorFlow OAuth test fixture path, digest, fake identity, and
+  repository-wide private-key marker policy.
+- See `docs/plans/2026-06-17-model-prediction-range-validation.md` for executable
+  softmax probability boundary validation before prediction UI state.
+- See `docs/plans/2026-06-19-frame-preprocessing-native-contract.md` for the
+  host-native RGB, crop, byte-bound, arithmetic, and ownership contract.
 
 ## Contributing
 

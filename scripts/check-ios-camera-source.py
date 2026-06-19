@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 import hashlib
+import json
 import re
 import sys
 from pathlib import Path
+
+from workflow_contract import validate as validate_workflow
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,12 +18,38 @@ LABEL_LOAD_PLAN = DOCS_PLANS / "2026-06-09-label-load-guard.md"
 CI_PLAN = DOCS_PLANS / "2026-06-10-ci-baseline.md"
 RESOURCE_PLAN = DOCS_PLANS / "2026-06-10-model-resource-integrity.md"
 CAPTURE_TEARDOWN_PLAN = DOCS_PLANS / "2026-06-10-capture-teardown-order.md"
+LABEL_ENCODING_PLAN = DOCS_PLANS / "2026-06-12-label-encoding-guard.md"
+CALLBACK_DRAIN_PLAN = DOCS_PLANS / "2026-06-12-capture-callback-drain.md"
+FRAME_LAYOUT_PLAN = DOCS_PLANS / "2026-06-13-frame-layout-validation.md"
+SAMPLING_ARITHMETIC_PLAN = DOCS_PLANS / "2026-06-13-sampling-coordinate-arithmetic.md"
+ROOT_OVERRIDE_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
+FINITE_PREDICTIONS_PLAN = DOCS_PLANS / "2026-06-14-finite-model-predictions.md"
+OUTPUT_DTYPE_PLAN = DOCS_PLANS / "2026-06-14-model-output-dtype-validation.md"
+CREDENTIAL_FIXTURE_PLAN = DOCS_PLANS / "2026-06-15-upstream-credential-fixture-provenance.md"
+PREDICTION_RANGE_PLAN = DOCS_PLANS / "2026-06-17-model-prediction-range-validation.md"
+FRAME_PREPROCESSING_NATIVE_PLAN = DOCS_PLANS / "2026-06-19-frame-preprocessing-native-contract.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
     "app/data/imagenet_comp_graph_label_strings.txt": "da2a31ecfe9f212ae8dd07379b11a74cb2d7a110eba12c5fc8c862a65b8e6606",
     "app/data/grace_hopper.jpg": "e1f57e98cf38076c0f9a058d74ffddf90f20453e436033784606b63c8ed2e49a",
 }
+CREDENTIAL_FIXTURE = "app/platform/cloud/testdata/service_account_credentials.json"
+CREDENTIAL_FIXTURE_SHA256 = "c7d61aaf782924787e979bb3b64e8ccdce81b838d03c44f5dce746e3365ff2f9"
+PRIVATE_KEY_PEM_LABELS = (
+    "RSA PRIVATE KEY",
+    "PRIVATE KEY",
+    "EC PRIVATE KEY",
+    "DSA PRIVATE KEY",
+    "ENCRYPTED PRIVATE KEY",
+    "OPENSSH PRIVATE KEY",
+    "PGP PRIVATE KEY BLOCK",
+)
+PRIVATE_KEY_PEM_MARKERS = tuple(
+    ("-----BEGIN " + label + "-----").encode("ascii")
+    for label in PRIVATE_KEY_PEM_LABELS
+)
+PRIVATE_KEY_MARKER_OVERLAP = max(len(marker) for marker in PRIVATE_KEY_PEM_MARKERS) - 1
 
 
 def read_text(relative_path):
@@ -33,10 +62,19 @@ def require_paths():
         "app/tensorflow_camera.xcodeproj/project.pbxproj",
         "app/Info.plist",
         "app/CameraExampleViewController.mm",
+        "app/frame_preprocessing.h",
+        "app/prediction_validation.h",
         "app/CameraExampleAppDelegate.m",
+        "tests/frame_preprocessing_test.cc",
+        "tests/prediction_validation_test.cc",
+        "scripts/run-frame-preprocessing-tests.sh",
+        "scripts/run-ios-build.sh",
+        "scripts/run-prediction-range-tests.sh",
+        "scripts/test_frame_preprocessing_mutations.py",
         "app/data/tensorflow_inception_graph.pb",
         "app/data/imagenet_comp_graph_label_strings.txt",
         "app/data/grace_hopper.jpg",
+        CREDENTIAL_FIXTURE,
     ):
         if not (ROOT / relative_path).exists():
             errors.append(f"missing required file: {relative_path}")
@@ -59,6 +97,26 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-10-model-resource-integrity.md is missing")
     if not CAPTURE_TEARDOWN_PLAN.exists():
         errors.append("docs/plans/2026-06-10-capture-teardown-order.md is missing")
+    if not LABEL_ENCODING_PLAN.exists():
+        errors.append("docs/plans/2026-06-12-label-encoding-guard.md is missing")
+    if not CALLBACK_DRAIN_PLAN.exists():
+        errors.append("docs/plans/2026-06-12-capture-callback-drain.md is missing")
+    if not FRAME_LAYOUT_PLAN.exists():
+        errors.append("docs/plans/2026-06-13-frame-layout-validation.md is missing")
+    if not SAMPLING_ARITHMETIC_PLAN.exists():
+        errors.append("docs/plans/2026-06-13-sampling-coordinate-arithmetic.md is missing")
+    if not ROOT_OVERRIDE_PLAN.exists():
+        errors.append("docs/plans/2026-06-14-make-root-override-protection.md is missing")
+    if not FINITE_PREDICTIONS_PLAN.exists():
+        errors.append("docs/plans/2026-06-14-finite-model-predictions.md is missing")
+    if not OUTPUT_DTYPE_PLAN.exists():
+        errors.append("docs/plans/2026-06-14-model-output-dtype-validation.md is missing")
+    if not CREDENTIAL_FIXTURE_PLAN.exists():
+        errors.append("docs/plans/2026-06-15-upstream-credential-fixture-provenance.md is missing")
+    if not PREDICTION_RANGE_PLAN.exists():
+        errors.append("docs/plans/2026-06-17-model-prediction-range-validation.md is missing")
+    if not FRAME_PREPROCESSING_NATIVE_PLAN.exists():
+        errors.append("docs/plans/2026-06-19-frame-preprocessing-native-contract.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -69,6 +127,65 @@ def docs_plan_checks():
         if "Status: Completed" not in plan or "make check" not in plan:
             errors.append(f"{plan_path.relative_to(ROOT)} must record completed status and make check verification")
 
+    if FINITE_PREDICTIONS_PLAN.exists():
+        finite_plan = FINITE_PREDICTIONS_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "repository and external-directory `make check` passed",
+            "hostile finite-prediction mutations were rejected",
+        ):
+            if evidence not in finite_plan:
+                errors.append(f"{FINITE_PREDICTIONS_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}")
+
+    if OUTPUT_DTYPE_PLAN.exists():
+        dtype_plan = OUTPUT_DTYPE_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "Status: Completed",
+            "repository and external-directory `make check` passed",
+            "hostile model-output dtype mutations were rejected",
+        ):
+            if evidence not in dtype_plan:
+                errors.append(f"{OUTPUT_DTYPE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}")
+
+    if CREDENTIAL_FIXTURE_PLAN.exists():
+        fixture_plan = CREDENTIAL_FIXTURE_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "Status: Completed",
+            "repository and external-directory `make check` passed",
+            "hostile credential-fixture mutations were rejected",
+            "protected fixture path and digest remained unchanged",
+            "generated-artifact and credential-pattern audits passed",
+        ):
+            if evidence not in fixture_plan:
+                errors.append(
+                    f"{CREDENTIAL_FIXTURE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
+                )
+
+    if PREDICTION_RANGE_PLAN.exists():
+        range_plan = PREDICTION_RANGE_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "Status: Completed",
+            "repository and external-directory `make check` passed",
+            "hostile model-prediction range mutations were rejected",
+            "generated-artifact and credential-pattern audits passed",
+        ):
+            if evidence not in range_plan:
+                errors.append(
+                    f"{PREDICTION_RANGE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
+                )
+
+    for relative_path in ("README.md", "SECURITY.md", "VISION.md", "CHANGES.md"):
+        document = re.sub(r"\s+", " ", read_text(relative_path)).lower()
+        if "sampling coordinate arithmetic" not in document:
+            errors.append(f"{relative_path} must document sampling coordinate arithmetic")
+        if "finite model predictions" not in document:
+            errors.append(f"{relative_path} must document finite model predictions")
+        if "model output dtype validation" not in document:
+            errors.append(f"{relative_path} must document model output dtype validation")
+        if "reviewed upstream credential fixture" not in document:
+            errors.append(f"{relative_path} must document the reviewed upstream credential fixture")
+        if "model prediction range validation" not in document:
+            errors.append(f"{relative_path} must document model prediction range validation")
+
     return errors
 
 
@@ -78,22 +195,7 @@ def ci_checks():
         return [".github/workflows/check.yml is missing"]
 
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
-    for fragment in (
-        "permissions:",
-        "contents: read",
-        "concurrency:",
-        "cancel-in-progress: true",
-        "contract:",
-        "runs-on: ubuntu-24.04",
-        "workflow_dispatch:",
-        "timeout-minutes: 5",
-        "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10",
-        "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
-        'python-version: "3.12"',
-        "run: make check",
-    ):
-        if fragment not in workflow:
-            errors.append(f"CI workflow is missing expected fragment: {fragment}")
+    errors.extend(f"CI workflow must {requirement}" for requirement in validate_workflow(workflow))
 
     readme = read_text("README.md")
     if "GitHub Actions" not in readme:
@@ -121,8 +223,83 @@ def resource_checks():
     return errors
 
 
+def file_contains_private_key_marker(path):
+    overlap = b""
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(64 * 1024), b""):
+            candidate = overlap + chunk
+            if any(marker in candidate for marker in PRIVATE_KEY_PEM_MARKERS):
+                return True
+            overlap = candidate[-PRIVATE_KEY_MARKER_OVERLAP:]
+    return False
+
+
+def credential_fixture_checks():
+    errors = []
+    fixture_path = ROOT / CREDENTIAL_FIXTURE
+    if not fixture_path.is_file():
+        return [f"reviewed upstream credential fixture is missing: {CREDENTIAL_FIXTURE}"]
+
+    actual_hash = hashlib.sha256(fixture_path.read_bytes()).hexdigest()
+    if actual_hash != CREDENTIAL_FIXTURE_SHA256:
+        errors.append(
+            f"reviewed upstream credential fixture hash mismatch: expected "
+            f"{CREDENTIAL_FIXTURE_SHA256}, got {actual_hash}"
+        )
+
+    try:
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        errors.append(f"reviewed upstream credential fixture must be valid UTF-8 JSON: {error}")
+        fixture = {}
+    if not isinstance(fixture, dict):
+        errors.append("reviewed upstream credential fixture must be a JSON object")
+        fixture = {}
+
+    expected_metadata = {
+        "type": "service_account",
+        "project_id": "fake_project_id",
+        "private_key_id": "fake_key_id",
+        "client_email": "fake-test-project.iam.gserviceaccount.com",
+    }
+    for key, expected_value in expected_metadata.items():
+        if fixture.get(key) != expected_value:
+            errors.append(
+                f"reviewed upstream credential fixture must retain fake {key}: {expected_value}"
+            )
+
+    marker_paths = []
+    for path in ROOT.rglob("*"):
+        if not path.is_file():
+            continue
+        relative_path = path.relative_to(ROOT)
+        if ".git" in relative_path.parts:
+            continue
+        try:
+            contains_marker = file_contains_private_key_marker(path)
+        except OSError as error:
+            errors.append(f"unable to inspect repository file for private-key markers: {relative_path}: {error}")
+            continue
+        if contains_marker:
+            marker_paths.append(relative_path.as_posix())
+
+    unexpected_paths = sorted(set(marker_paths) - {CREDENTIAL_FIXTURE})
+    for relative_path in unexpected_paths:
+        errors.append(f"unreviewed private-key marker found in repository file: {relative_path}")
+    if CREDENTIAL_FIXTURE not in marker_paths:
+        errors.append("reviewed upstream credential fixture must remain the sole key-shaped test asset")
+
+    return errors
+
+
 def project_checks():
-    errors = docs_plan_checks() + require_paths() + ci_checks() + resource_checks()
+    errors = (
+        docs_plan_checks()
+        + require_paths()
+        + ci_checks()
+        + resource_checks()
+        + credential_fixture_checks()
+    )
     if errors:
         return errors
 
@@ -140,14 +317,76 @@ def project_checks():
             errors.append(f"project is missing expected setting: {fragment}")
 
     makefile = read_text("Makefile")
+    root_declaration = "override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))"
+    root_assignments = re.findall(r"^(?:override\s+)?ROOT\s*[:+?]?=", makefile, re.MULTILINE)
+    if len(root_assignments) != 1 or makefile.count(root_declaration) != 1:
+        errors.append("Makefile must contain exactly one protected repository-root declaration")
+    tool_and_root_block = "\n".join((
+        "PYTHON ?= python3",
+        "CXX ?= c++",
+        "XCODEBUILD ?= xcodebuild",
+        root_declaration,
+    ))
+    if makefile.count(tool_and_root_block) != 1:
+        errors.append("Makefile must keep tool overrides before the protected repository root")
+    if '$(PYTHON) "$(ROOT)/scripts/test_credential_fixture_policy.py"' not in makefile:
+        errors.append("Makefile contract-test must run the credential fixture policy tests")
+    if 'CXX="$(CXX)" "$(ROOT)/scripts/run-prediction-range-tests.sh"' not in makefile:
+        errors.append("Makefile test must execute the model prediction range tests")
+    if 'CXX="$(CXX)" "$(ROOT)/scripts/run-frame-preprocessing-tests.sh"' not in makefile:
+        errors.append("Makefile test must execute frame preprocessing tests")
+    if 'CXX="$(CXX)" $(PYTHON) "$(ROOT)/scripts/test_frame_preprocessing_mutations.py"' not in makefile:
+        errors.append("Makefile test must execute frame preprocessing mutations")
     for fragment in (
-        "ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))",
+        ".PHONY: build check contract-test lint test verify",
+        "build: lint",
+        "verify: lint contract-test test build",
+        "check: verify",
         '"$(ROOT)/scripts/check-ios-camera-source.py"',
-        '"$(ROOT)/app/tensorflow_camera.xcodeproj"',
-        "-target CameraExample",
+        '"$(ROOT)/scripts/test_workflow_contract.py"',
+        '"$(ROOT)/scripts/run-prediction-range-tests.sh"',
+        '"$(ROOT)/scripts/run-frame-preprocessing-tests.sh"',
+        '"$(ROOT)/scripts/test_frame_preprocessing_mutations.py"',
+        '"$(ROOT)/scripts/run-ios-build.sh"',
     ):
         if fragment not in makefile:
             errors.append(f"Makefile is missing root-independent fragment: {fragment}")
+
+    if "docs/plans/2026-06-14-make-root-override-protection.md" not in read_text("README.md"):
+        errors.append("README must index Make root override protection evidence")
+    if "docs/plans/2026-06-14-finite-model-predictions.md" not in read_text("README.md"):
+        errors.append("README must index finite model prediction evidence")
+    if "docs/plans/2026-06-14-model-output-dtype-validation.md" not in read_text("README.md"):
+        errors.append("README must index model output dtype validation evidence")
+    if "docs/plans/2026-06-15-upstream-credential-fixture-provenance.md" not in read_text("README.md"):
+        errors.append("README must index upstream credential fixture provenance evidence")
+    if "docs/plans/2026-06-17-model-prediction-range-validation.md" not in read_text("README.md"):
+        errors.append("README must index model prediction range validation evidence")
+    if "docs/plans/2026-06-19-frame-preprocessing-native-contract.md" not in read_text("README.md"):
+        errors.append("README must index frame preprocessing native evidence")
+
+    runner = ROOT / "scripts" / "run-prediction-range-tests.sh"
+    if runner.exists() and not runner.stat().st_mode & 0o111:
+        errors.append("model prediction range test runner must be executable")
+    frame_runner = ROOT / "scripts" / "run-frame-preprocessing-tests.sh"
+    if frame_runner.exists() and not frame_runner.stat().st_mode & 0o111:
+        errors.append("frame preprocessing test runner must be executable")
+    ios_build_runner = ROOT / "scripts" / "run-ios-build.sh"
+    if ios_build_runner.exists() and not ios_build_runner.stat().st_mode & 0o111:
+        errors.append("iOS build runner must be executable")
+    if ios_build_runner.exists():
+        ios_build = ios_build_runner.read_text(encoding="utf-8")
+        for fragment in (
+            'mktemp -d "${TMPDIR:-/tmp}/tensorflow-camera-xcodebuild.XXXXXX"',
+            "trap 'rm -rf \"$TEMP_DIR\"' EXIT HUP INT TERM",
+            '"$ROOT/app/tensorflow_camera.xcodeproj"',
+            "-target CameraExample",
+            'OBJROOT="$TEMP_DIR/obj"',
+            'SYMROOT="$TEMP_DIR/products"',
+            'SHARED_PRECOMPS_DIR="$TEMP_DIR/precompiled"',
+        ):
+            if fragment not in ios_build:
+                errors.append(f"iOS build runner isolation is missing: {fragment}")
 
     return errors
 
@@ -159,6 +398,13 @@ def behavior_checks():
 
     source = read_text("app/CameraExampleViewController.mm")
     utils_source = read_text("app/tensorflow_utils.mm")
+    validation_source = read_text("app/prediction_validation.h")
+    validation_test = read_text("tests/prediction_validation_test.cc")
+    validation_runner = read_text("scripts/run-prediction-range-tests.sh")
+    frame_source = read_text("app/frame_preprocessing.h")
+    frame_test = read_text("tests/frame_preprocessing_test.cc")
+    frame_runner = read_text("scripts/run-frame-preprocessing-tests.sh")
+    frame_mutations = read_text("scripts/test_frame_preprocessing_mutations.py")
     teardown_match = re.search(r"- \(void\)teardownAVCapture \{(.*?)\n\}", source, re.DOTALL)
     if not teardown_match:
         errors.append("camera controller teardown method is missing")
@@ -167,16 +413,41 @@ def behavior_checks():
         teardown_contract = (
             "[session stopRunning];",
             "[videoDataOutput setSampleBufferDelegate:nil queue:NULL];",
+            "[self drainVideoDataOutputQueue];",
             "[videoDataOutput release];",
             "dispatch_release(videoDataOutputQueue);",
             "[previewLayer release];",
+            "[session release];",
             "session = nil;",
         )
         positions = [teardown.find(fragment) for fragment in teardown_contract]
         if any(position < 0 for position in positions):
             errors.append("camera teardown must stop capture, detach callbacks, release resources, and clear session")
         elif positions != sorted(positions):
-            errors.append("camera teardown must release capture resources in lifecycle order")
+            errors.append("camera teardown must detach, drain, and release capture resources in lifecycle order")
+    if "static char VideoDataOutputQueueKey;" not in source:
+        errors.append("video callback queue must have private queue-specific identity")
+    queue_create = 'dispatch_queue_create("VideoDataOutputQueue", DISPATCH_QUEUE_SERIAL);'
+    queue_identity = "dispatch_queue_set_specific(videoDataOutputQueue, &VideoDataOutputQueueKey,"
+    queue_delegate = "[videoDataOutput setSampleBufferDelegate:self queue:videoDataOutputQueue];"
+    queue_setup_positions = [source.find(fragment) for fragment in (queue_create, queue_identity, queue_delegate)]
+    if any(position < 0 for position in queue_setup_positions):
+        errors.append("video callback queue must create, identify, and then install its delegate")
+    elif queue_setup_positions != sorted(queue_setup_positions):
+        errors.append("video callback queue must register identity before delegate installation")
+    drain_match = re.search(r"- \(void\)drainVideoDataOutputQueue \{(.*?)\n\}", source, re.DOTALL)
+    if not drain_match:
+        errors.append("camera controller callback-drain helper is missing")
+    else:
+        drain = drain_match.group(1)
+        if "!videoDataOutputQueue" not in drain:
+            errors.append("callback drain must tolerate a missing video queue")
+        if "dispatch_get_specific(&VideoDataOutputQueueKey)" not in drain:
+            errors.append("callback drain must identify execution on the video queue")
+        if "dispatch_get_specific(&VideoDataOutputQueueKey) ==" not in drain:
+            errors.append("callback drain must skip synchronization on the video queue itself")
+        if "dispatch_sync(videoDataOutputQueue, ^{});" not in drain:
+            errors.append("callback drain must wait for already-enqueued video work")
     if source.count("[videoDataOutput setSampleBufferDelegate:nil queue:NULL];") < 2:
         errors.append("camera setup failure and teardown must both detach the video sample delegate")
     if "AVCaptureStillImageIsCapturingStillImageContext" not in source:
@@ -241,12 +512,73 @@ def behavior_checks():
         errors.append("frame preprocessing must handle pixel buffer lock failures")
     if "CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);" not in source:
         errors.append("frame preprocessing must unlock locked pixel buffers")
-    if "const int in_x = (x * image_width) / wanted_input_width;" not in source:
-        errors.append("frame preprocessing must derive source x coordinates from output x")
-    if "const int in_y = (y * image_height) / wanted_input_height;" not in source:
-        errors.append("frame preprocessing must derive source y coordinates from output y")
-    if "in + (in_y * sourceRowBytes) + (in_x * image_channels)" not in source:
-        errors.append("frame preprocessing must use CVPixelBuffer row bytes for source rows")
+    if "#include <limits.h>" not in source:
+        errors.append("frame preprocessing must retain the native dimension bound")
+    for fragment in (
+        "const size_t sourceRowBytes = CVPixelBufferGetBytesPerRow(pixelBuffer);",
+        "const size_t sourceWidth = CVPixelBufferGetWidth(pixelBuffer);",
+        "const size_t sourceFullHeight = CVPixelBufferGetHeight(pixelBuffer);",
+        "const size_t sourceDataSize = CVPixelBufferGetDataSize(pixelBuffer);",
+        "CVPixelBufferIsPlanar(pixelBuffer)",
+        "sourceFullHeight > INT_MAX",
+        "tensorflow_camera::BuildFrameLayout(",
+        "tensorflow_camera::SourcePixelOffset(",
+        "tensorflow_camera::SourceChannelOffset(",
+        'LOG(ERROR) << "Invalid pixel buffer geometry";',
+        'LOG(ERROR) << "Invalid pixel buffer sampling arithmetic";',
+    ):
+        if fragment not in source:
+            errors.append(f"frame preprocessing geometry contract is missing: {fragment}")
+    if "const int sourceRowBytes =" in source:
+        errors.append("frame preprocessing must not truncate the Core Video row stride")
+    geometry_guard = source.find("tensorflow_camera::BuildFrameLayout(")
+    pixel_lock = source.find("CVPixelBufferLockBaseAddress(pixelBuffer, 0)")
+    if geometry_guard < 0 or pixel_lock < 0 or geometry_guard > pixel_lock:
+        errors.append("frame preprocessing must validate geometry before locking frame memory")
+    if "const int in_x" in source or "const int in_y" in source:
+        errors.append("frame preprocessing must not narrow source sampling coordinates to int")
+    if "(x * image_width)" in source or "(y * image_height)" in source:
+        errors.append("frame preprocessing must not multiply sampling coordinates as signed int")
+    for fragment in (
+        "inline bool CheckedMultiply",
+        "inline bool CheckedAdd",
+        "final_offset >= data_size",
+        "source_offset > layout.data_size - 4",
+        "output_channel >= 3",
+        "*source_channel = output_channel + 1;",
+        "*source_channel = 2 - output_channel;",
+    ):
+        if fragment not in frame_source:
+            errors.append(f"frame preprocessing helper contract is missing: {fragment}")
+    for fragment in (
+        "landscape frames use a centered square crop",
+        "portrait frames use a centered square crop",
+        "BGRA input is published to TensorFlow as RGB",
+        "ARGB input skips alpha and publishes RGB",
+        "truncated backing storage is rejected",
+        "overflowing resize products are rejected",
+        "unsupported output channels are rejected",
+    ):
+        if fragment not in frame_test:
+            errors.append(f"frame preprocessing native test is missing: {fragment}")
+    for fragment in (
+        '"${CXX:-c++}" -std=c++11 -Wall -Wextra -Werror',
+        '"$ROOT/tests/frame_preprocessing_test.cc"',
+        '"$TEMP_DIR/frame_preprocessing_test"',
+        "trap 'rm -rf \"$TEMP_DIR\"' EXIT HUP INT TERM",
+    ):
+        if fragment not in frame_runner:
+            errors.append(f"frame preprocessing test runner is missing: {fragment}")
+    for fragment in (
+        "BGRA red/blue swap",
+        "ARGB alpha exposure",
+        "landscape crop removal",
+        "portrait crop removal",
+        "backing-size check removal",
+        "resize overflow check removal",
+    ):
+        if fragment not in frame_mutations:
+            errors.append(f"frame preprocessing mutation is missing: {fragment}")
     if "&outputs[0]" in source:
         errors.append("model output handling must not assume outputs[0] exists")
     if "outputs.empty()" not in source:
@@ -255,8 +587,76 @@ def behavior_checks():
         errors.append("model output handling must guard empty label lists")
     if "labels[index % predictions.size()]" in source:
         errors.append("model output handling must not index labels by prediction count modulo")
-    if "const int result_count" not in source:
+    if "const size_t result_count" not in source:
         errors.append("model output handling must bound iteration by labels and predictions")
+    if "stringWithCString:label.c_str()" in source:
+        errors.append("model labels must not use unchecked legacy C-string conversion")
+    if "stringWithUTF8String:label.c_str()" not in source:
+        errors.append("model labels must use explicit UTF-8 conversion")
+    if "if (!labelObject)" not in source:
+        errors.append("model label rendering must reject failed string conversion")
+    if "Skipping invalid UTF-8 model label" not in source:
+        errors.append("model label rendering must log skipped invalid labels")
+    if "if (output->dtype() != tensorflow::DT_FLOAT)" not in source:
+        errors.append("model output handling must reject non-float prediction tensors")
+    if "Skipping model output with unexpected dtype" not in source:
+        errors.append("model output handling must log skipped non-float tensors")
+    dtype_guard = source.find("if (output->dtype() != tensorflow::DT_FLOAT)")
+    typed_flatten = source.find("output->flat<float>()")
+    if dtype_guard < 0 or typed_flatten < 0 or dtype_guard > typed_flatten:
+        errors.append("model output handling must validate dtype before typed tensor access")
+    if "#include <cmath>" not in source:
+        errors.append("model output handling must include the finite-value predicate")
+    if "if (!std::isfinite(predictionValue))" not in source:
+        errors.append("model output handling must reject non-finite prediction values")
+    if "Skipping non-finite model prediction" not in source:
+        errors.append("model output handling must log skipped non-finite predictions")
+    if "if (predictionValue > 0.05f)" not in source:
+        errors.append("model output handling must preserve the finite prediction display threshold")
+    finite_guard = source.find("if (!std::isfinite(predictionValue))")
+    number_creation = source.find("[NSNumber numberWithFloat:predictionValue]")
+    if finite_guard < 0 or number_creation < 0 or finite_guard > number_creation:
+        errors.append("model output handling must reject non-finite predictions before NSNumber creation")
+    for fragment in (
+        "inline bool IsValidModelPrediction(float value)",
+        "return value >= 0.0f && value <= 1.0f;",
+    ):
+        if fragment not in validation_source:
+            errors.append(f"model prediction range helper is missing: {fragment}")
+    for fragment in (
+        'ExpectValidation(0.0f, true, "zero is a valid inclusive endpoint")',
+        'ExpectValidation(1.0f, true, "one is a valid inclusive endpoint")',
+        'ExpectValidation(-0.01f, false, "negative predictions are rejected")',
+        'ExpectValidation(1.01f, false, "predictions above one are rejected")',
+        "std::numeric_limits<float>::max()",
+        "std::numeric_limits<float>::quiet_NaN()",
+        'Prediction range tests passed',
+    ):
+        if fragment not in validation_test:
+            errors.append(f"model prediction range executable test is missing: {fragment}")
+    for fragment in (
+        '"${CXX:-c++}" -std=c++11 -Wall -Wextra -Werror',
+        '"$ROOT/tests/prediction_validation_test.cc"',
+        '"$TEMP_DIR/prediction_validation_test"',
+        "trap 'rm -rf \"$TEMP_DIR\"' EXIT HUP INT TERM",
+    ):
+        if fragment not in validation_runner:
+            errors.append(f"model prediction range test runner is missing: {fragment}")
+    range_call = "if (!tensorflow_camera::IsValidModelPrediction(predictionValue))"
+    if '#include "prediction_validation.h"' not in source:
+        errors.append("camera controller must include shared model prediction range validation")
+    if range_call not in source:
+        errors.append("camera controller must reject out-of-range model predictions")
+    if "Skipping out-of-range model prediction" not in source:
+        errors.append("camera controller must log skipped out-of-range model predictions")
+    range_guard = source.find(range_call)
+    threshold = source.find("if (predictionValue > 0.05f)")
+    if min(finite_guard, range_guard, threshold, number_creation) < 0 or not (
+        finite_guard < range_guard < threshold < number_creation
+    ):
+        errors.append(
+            "model prediction validation must order finite, unit-range, threshold, and collection checks"
+        )
     if 'LOG(FATAL) << "Couldn\'t load model' in source:
         errors.append("model load failures must not crash with LOG(FATAL)")
     if 'LOG(FATAL) << "Couldn\'t load labels' in source:
@@ -279,6 +679,14 @@ def behavior_checks():
         errors.append("missing bundle resources must be logged as non-fatal errors")
     if "if (!network_path)" not in utils_source:
         errors.append("memory-mapped model loading must guard missing bundle resources")
+    if utils_source.count("std::unique_ptr<tensorflow::Session> new_session(session_pointer);") != 2:
+        errors.append("TensorFlow model loading must own new sessions transactionally")
+    if utils_source.count("session->reset(new_session.release());") != 2:
+        errors.append("TensorFlow model loading must publish sessions only after graph creation")
+    if "std::unique_ptr<tensorflow::MemmappedEnv> new_memmapped_env(" not in utils_source:
+        errors.append("memory-mapped model loading must own its environment transactionally")
+    if "memmapped_env->reset(new_memmapped_env.release());" not in utils_source:
+        errors.append("memory-mapped model loading must publish its environment only after graph creation")
     if "if (!t.is_open())" not in utils_source:
         errors.append("label loading must fail when the labels file cannot be opened")
     if "Failed to open labels file" not in utils_source:

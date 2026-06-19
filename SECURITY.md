@@ -35,11 +35,29 @@ Helpful reports include:
 - Review found secret-like configuration names that require careful review before use; changes in those areas should receive security-focused review before merge.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 - GitHub Actions runs the SDK-free `make check` baseline with read-only
-  repository permissions on Ubuntu 24.04, a five-minute timeout, concurrency
-  cancellation, and commit-pinned Node 24 actions. The gate verifies exact
-  SHA-256 digests for the graph, label set, and sample image.
-- Camera teardown stops local capture and detaches frame callbacks before
-  releasing their serial queue, preventing stale processing after shutdown.
+  repository permissions and credential-free checkout on Ubuntu 24.04, a
+  five-minute timeout, concurrency cancellation, and commit-pinned Node 24
+  actions. Structural mutation tests reject contradictory credential settings,
+  write permissions, and unreviewed actions. The gate verifies exact SHA-256
+  digests for the graph, label set, and sample image.
+- Model labels that fail explicit UTF-8 conversion are skipped before they can
+  become invalid Objective-C collection keys.
+- Camera teardown stops local capture, detaches frame callbacks, and drains
+  already-enqueued work before releasing its serial queue. Queue-specific
+  identity prevents that drain from synchronously waiting on itself.
+- Camera preprocessing rejects impossible dimensions and undersized Core Video
+  row strides before locking or reading frame memory.
+- Camera sampling coordinate arithmetic promotes resize-loop intermediates
+  before multiplication and pointer offset calculation.
+- Finite model predictions are required before scores cross into Objective-C
+  collections; malformed non-finite outputs are logged and skipped.
+- Model prediction range validation rejects finite softmax values outside the
+  inclusive `[0, 1]` probability range before smoothing or presentation.
+- Model output dtype validation rejects incompatible prediction tensors before
+  TensorFlow typed access or Objective-C publication.
+- The reviewed upstream credential fixture is the sole allowed key-shaped file.
+  Project checks pin its TensorFlow testdata SHA-256 and fake service-account
+  identity, and reject private-key PEM markers at every other repository path.
 
 ## Mobile Privacy Notes
 
@@ -48,6 +66,11 @@ If this project requests device permissions such as location, camera, microphone
 ## Dependency and Supply Chain Security
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
+
+The reviewed TensorFlow OAuth fixture is a narrow upstream-test compatibility
+exception, not permission to commit application credentials or additional test
+keys. Any change to its path, digest, or fake identity requires explicit
+upstream provenance review.
 
 ## Safe Research Guidelines
 
