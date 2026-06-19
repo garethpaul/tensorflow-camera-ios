@@ -1,5 +1,15 @@
 # Changes
 
+## 2026-06-19
+
+- Corrected ARGB/BGRA camera bytes to TensorFlow RGB order, added symmetric
+  center cropping, and rejected truncated or overflow-prone frame layouts.
+- Made capture-session ownership explicit and made TensorFlow model loading
+  transactional so failed graph creation cannot leak or publish a session.
+- Added host-native frame preprocessing tests and hostile mutation coverage.
+- Isolated Xcode products from the source tree so the default `app/build`
+  directory cannot collide with the tracked `app/BUILD` file on macOS.
+
 ## 2026-06-17
 
 - Added executable model prediction range validation so malformed finite

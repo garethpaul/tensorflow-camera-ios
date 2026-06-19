@@ -27,6 +27,7 @@ FINITE_PREDICTIONS_PLAN = DOCS_PLANS / "2026-06-14-finite-model-predictions.md"
 OUTPUT_DTYPE_PLAN = DOCS_PLANS / "2026-06-14-model-output-dtype-validation.md"
 CREDENTIAL_FIXTURE_PLAN = DOCS_PLANS / "2026-06-15-upstream-credential-fixture-provenance.md"
 PREDICTION_RANGE_PLAN = DOCS_PLANS / "2026-06-17-model-prediction-range-validation.md"
+FRAME_PREPROCESSING_NATIVE_PLAN = DOCS_PLANS / "2026-06-19-frame-preprocessing-native-contract.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -61,10 +62,15 @@ def require_paths():
         "app/tensorflow_camera.xcodeproj/project.pbxproj",
         "app/Info.plist",
         "app/CameraExampleViewController.mm",
+        "app/frame_preprocessing.h",
         "app/prediction_validation.h",
         "app/CameraExampleAppDelegate.m",
+        "tests/frame_preprocessing_test.cc",
         "tests/prediction_validation_test.cc",
+        "scripts/run-frame-preprocessing-tests.sh",
+        "scripts/run-ios-build.sh",
         "scripts/run-prediction-range-tests.sh",
+        "scripts/test_frame_preprocessing_mutations.py",
         "app/data/tensorflow_inception_graph.pb",
         "app/data/imagenet_comp_graph_label_strings.txt",
         "app/data/grace_hopper.jpg",
@@ -109,6 +115,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-15-upstream-credential-fixture-provenance.md is missing")
     if not PREDICTION_RANGE_PLAN.exists():
         errors.append("docs/plans/2026-06-17-model-prediction-range-validation.md is missing")
+    if not FRAME_PREPROCESSING_NATIVE_PLAN.exists():
+        errors.append("docs/plans/2026-06-19-frame-preprocessing-native-contract.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -325,6 +333,10 @@ def project_checks():
         errors.append("Makefile contract-test must run the credential fixture policy tests")
     if 'CXX="$(CXX)" "$(ROOT)/scripts/run-prediction-range-tests.sh"' not in makefile:
         errors.append("Makefile test must execute the model prediction range tests")
+    if 'CXX="$(CXX)" "$(ROOT)/scripts/run-frame-preprocessing-tests.sh"' not in makefile:
+        errors.append("Makefile test must execute frame preprocessing tests")
+    if 'CXX="$(CXX)" $(PYTHON) "$(ROOT)/scripts/test_frame_preprocessing_mutations.py"' not in makefile:
+        errors.append("Makefile test must execute frame preprocessing mutations")
     for fragment in (
         ".PHONY: build check contract-test lint test verify",
         "build: lint",
@@ -333,8 +345,9 @@ def project_checks():
         '"$(ROOT)/scripts/check-ios-camera-source.py"',
         '"$(ROOT)/scripts/test_workflow_contract.py"',
         '"$(ROOT)/scripts/run-prediction-range-tests.sh"',
-        '"$(ROOT)/app/tensorflow_camera.xcodeproj"',
-        "-target CameraExample",
+        '"$(ROOT)/scripts/run-frame-preprocessing-tests.sh"',
+        '"$(ROOT)/scripts/test_frame_preprocessing_mutations.py"',
+        '"$(ROOT)/scripts/run-ios-build.sh"',
     ):
         if fragment not in makefile:
             errors.append(f"Makefile is missing root-independent fragment: {fragment}")
@@ -349,10 +362,31 @@ def project_checks():
         errors.append("README must index upstream credential fixture provenance evidence")
     if "docs/plans/2026-06-17-model-prediction-range-validation.md" not in read_text("README.md"):
         errors.append("README must index model prediction range validation evidence")
+    if "docs/plans/2026-06-19-frame-preprocessing-native-contract.md" not in read_text("README.md"):
+        errors.append("README must index frame preprocessing native evidence")
 
     runner = ROOT / "scripts" / "run-prediction-range-tests.sh"
     if runner.exists() and not runner.stat().st_mode & 0o111:
         errors.append("model prediction range test runner must be executable")
+    frame_runner = ROOT / "scripts" / "run-frame-preprocessing-tests.sh"
+    if frame_runner.exists() and not frame_runner.stat().st_mode & 0o111:
+        errors.append("frame preprocessing test runner must be executable")
+    ios_build_runner = ROOT / "scripts" / "run-ios-build.sh"
+    if ios_build_runner.exists() and not ios_build_runner.stat().st_mode & 0o111:
+        errors.append("iOS build runner must be executable")
+    if ios_build_runner.exists():
+        ios_build = ios_build_runner.read_text(encoding="utf-8")
+        for fragment in (
+            'mktemp -d "${TMPDIR:-/tmp}/tensorflow-camera-xcodebuild.XXXXXX"',
+            "trap 'rm -rf \"$TEMP_DIR\"' EXIT HUP INT TERM",
+            '"$ROOT/app/tensorflow_camera.xcodeproj"',
+            "-target CameraExample",
+            'OBJROOT="$TEMP_DIR/obj"',
+            'SYMROOT="$TEMP_DIR/products"',
+            'SHARED_PRECOMPS_DIR="$TEMP_DIR/precompiled"',
+        ):
+            if fragment not in ios_build:
+                errors.append(f"iOS build runner isolation is missing: {fragment}")
 
     return errors
 
@@ -367,6 +401,10 @@ def behavior_checks():
     validation_source = read_text("app/prediction_validation.h")
     validation_test = read_text("tests/prediction_validation_test.cc")
     validation_runner = read_text("scripts/run-prediction-range-tests.sh")
+    frame_source = read_text("app/frame_preprocessing.h")
+    frame_test = read_text("tests/frame_preprocessing_test.cc")
+    frame_runner = read_text("scripts/run-frame-preprocessing-tests.sh")
+    frame_mutations = read_text("scripts/test_frame_preprocessing_mutations.py")
     teardown_match = re.search(r"- \(void\)teardownAVCapture \{(.*?)\n\}", source, re.DOTALL)
     if not teardown_match:
         errors.append("camera controller teardown method is missing")
@@ -379,6 +417,7 @@ def behavior_checks():
             "[videoDataOutput release];",
             "dispatch_release(videoDataOutputQueue);",
             "[previewLayer release];",
+            "[session release];",
             "session = nil;",
         )
         positions = [teardown.find(fragment) for fragment in teardown_contract]
@@ -479,31 +518,67 @@ def behavior_checks():
         "const size_t sourceRowBytes = CVPixelBufferGetBytesPerRow(pixelBuffer);",
         "const size_t sourceWidth = CVPixelBufferGetWidth(pixelBuffer);",
         "const size_t sourceFullHeight = CVPixelBufferGetHeight(pixelBuffer);",
-        "sourceWidth == 0 || sourceFullHeight == 0 || sourceWidth > INT_MAX",
+        "const size_t sourceDataSize = CVPixelBufferGetDataSize(pixelBuffer);",
+        "CVPixelBufferIsPlanar(pixelBuffer)",
         "sourceFullHeight > INT_MAX",
-        "sourceWidth > (sourceRowBytes / image_channels)",
+        "tensorflow_camera::BuildFrameLayout(",
+        "tensorflow_camera::SourcePixelOffset(",
+        "tensorflow_camera::SourceChannelOffset(",
         'LOG(ERROR) << "Invalid pixel buffer geometry";',
-        "const int image_width = (int)sourceWidth;",
-        "const int fullHeight = (int)sourceFullHeight;",
+        'LOG(ERROR) << "Invalid pixel buffer sampling arithmetic";',
     ):
         if fragment not in source:
             errors.append(f"frame preprocessing geometry contract is missing: {fragment}")
     if "const int sourceRowBytes =" in source:
         errors.append("frame preprocessing must not truncate the Core Video row stride")
-    geometry_guard = source.find("sourceWidth == 0 || sourceFullHeight == 0")
+    geometry_guard = source.find("tensorflow_camera::BuildFrameLayout(")
     pixel_lock = source.find("CVPixelBufferLockBaseAddress(pixelBuffer, 0)")
     if geometry_guard < 0 or pixel_lock < 0 or geometry_guard > pixel_lock:
         errors.append("frame preprocessing must validate geometry before locking frame memory")
-    if "const size_t in_x =\n          (static_cast<size_t>(x) * sourceWidth) /" not in source:
-        errors.append("frame preprocessing must derive source x coordinates with size-aware arithmetic")
-    if "const size_t in_y =\n          (static_cast<size_t>(y) * static_cast<size_t>(image_height)) /" not in source:
-        errors.append("frame preprocessing must derive source y coordinates with size-aware arithmetic")
     if "const int in_x" in source or "const int in_y" in source:
         errors.append("frame preprocessing must not narrow source sampling coordinates to int")
     if "(x * image_width)" in source or "(y * image_height)" in source:
         errors.append("frame preprocessing must not multiply sampling coordinates as signed int")
-    if "in + (in_y * sourceRowBytes) + (in_x * image_channels)" not in source:
-        errors.append("frame preprocessing must use CVPixelBuffer row bytes for source rows")
+    for fragment in (
+        "inline bool CheckedMultiply",
+        "inline bool CheckedAdd",
+        "final_offset >= data_size",
+        "source_offset > layout.data_size - 4",
+        "output_channel >= 3",
+        "*source_channel = output_channel + 1;",
+        "*source_channel = 2 - output_channel;",
+    ):
+        if fragment not in frame_source:
+            errors.append(f"frame preprocessing helper contract is missing: {fragment}")
+    for fragment in (
+        "landscape frames use a centered square crop",
+        "portrait frames use a centered square crop",
+        "BGRA input is published to TensorFlow as RGB",
+        "ARGB input skips alpha and publishes RGB",
+        "truncated backing storage is rejected",
+        "overflowing resize products are rejected",
+        "unsupported output channels are rejected",
+    ):
+        if fragment not in frame_test:
+            errors.append(f"frame preprocessing native test is missing: {fragment}")
+    for fragment in (
+        '"${CXX:-c++}" -std=c++11 -Wall -Wextra -Werror',
+        '"$ROOT/tests/frame_preprocessing_test.cc"',
+        '"$TEMP_DIR/frame_preprocessing_test"',
+        "trap 'rm -rf \"$TEMP_DIR\"' EXIT HUP INT TERM",
+    ):
+        if fragment not in frame_runner:
+            errors.append(f"frame preprocessing test runner is missing: {fragment}")
+    for fragment in (
+        "BGRA red/blue swap",
+        "ARGB alpha exposure",
+        "landscape crop removal",
+        "portrait crop removal",
+        "backing-size check removal",
+        "resize overflow check removal",
+    ):
+        if fragment not in frame_mutations:
+            errors.append(f"frame preprocessing mutation is missing: {fragment}")
     if "&outputs[0]" in source:
         errors.append("model output handling must not assume outputs[0] exists")
     if "outputs.empty()" not in source:
@@ -512,7 +587,7 @@ def behavior_checks():
         errors.append("model output handling must guard empty label lists")
     if "labels[index % predictions.size()]" in source:
         errors.append("model output handling must not index labels by prediction count modulo")
-    if "const int result_count" not in source:
+    if "const size_t result_count" not in source:
         errors.append("model output handling must bound iteration by labels and predictions")
     if "stringWithCString:label.c_str()" in source:
         errors.append("model labels must not use unchecked legacy C-string conversion")
@@ -604,6 +679,14 @@ def behavior_checks():
         errors.append("missing bundle resources must be logged as non-fatal errors")
     if "if (!network_path)" not in utils_source:
         errors.append("memory-mapped model loading must guard missing bundle resources")
+    if utils_source.count("std::unique_ptr<tensorflow::Session> new_session(session_pointer);") != 2:
+        errors.append("TensorFlow model loading must own new sessions transactionally")
+    if utils_source.count("session->reset(new_session.release());") != 2:
+        errors.append("TensorFlow model loading must publish sessions only after graph creation")
+    if "std::unique_ptr<tensorflow::MemmappedEnv> new_memmapped_env(" not in utils_source:
+        errors.append("memory-mapped model loading must own its environment transactionally")
+    if "memmapped_env->reset(new_memmapped_env.release());" not in utils_source:
+        errors.append("memory-mapped model loading must publish its environment only after graph creation")
     if "if (!t.is_open())" not in utils_source:
         errors.append("label loading must fail when the labels file cannot be opened")
     if "Failed to open labels file" not in utils_source:

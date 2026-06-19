@@ -22,6 +22,7 @@
 #include <cmath>
 #include <limits.h>
 
+#include "frame_preprocessing.h"
 #include "prediction_validation.h"
 #include "tensorflow_utils.h"
 
@@ -179,7 +180,6 @@ static char VideoDataOutputQueueKey;
   [rootLayer addSublayer:previewLayer];
   [session startRunning];
 
-  [session release];
 }
 
 - (void)drainVideoDataOutputQueue {
@@ -213,6 +213,7 @@ static char VideoDataOutputQueueKey;
   [previewLayer removeFromSuperlayer];
   [previewLayer release];
   previewLayer = nil;
+  [session release];
   session = nil;
 }
 
@@ -357,12 +358,17 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     return;
   }
 
+  if (CVPixelBufferIsPlanar(pixelBuffer)) {
+    LOG(ERROR) << "Planar pixel buffers are unsupported";
+    return;
+  }
+
   OSType sourcePixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
-  int doReverseChannels;
+  tensorflow_camera::PixelLayout pixelLayout;
   if (kCVPixelFormatType_32ARGB == sourcePixelFormat) {
-    doReverseChannels = 1;
+    pixelLayout = tensorflow_camera::PixelLayout::kARGB;
   } else if (kCVPixelFormatType_32BGRA == sourcePixelFormat) {
-    doReverseChannels = 0;
+    pixelLayout = tensorflow_camera::PixelLayout::kBGRA;
   } else {
     LOG(ERROR) << "Unsupported pixel format: " << sourcePixelFormat;
     return;
@@ -371,15 +377,15 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
   const size_t sourceRowBytes = CVPixelBufferGetBytesPerRow(pixelBuffer);
   const size_t sourceWidth = CVPixelBufferGetWidth(pixelBuffer);
   const size_t sourceFullHeight = CVPixelBufferGetHeight(pixelBuffer);
-  const size_t image_channels = 4;
-  if (sourceWidth == 0 || sourceFullHeight == 0 || sourceWidth > INT_MAX ||
-      sourceFullHeight > INT_MAX ||
-      sourceWidth > (sourceRowBytes / image_channels)) {
+  const size_t sourceDataSize = CVPixelBufferGetDataSize(pixelBuffer);
+  tensorflow_camera::FrameLayout frameLayout;
+  if (sourceWidth > INT_MAX || sourceFullHeight > INT_MAX ||
+      !tensorflow_camera::BuildFrameLayout(
+          sourceWidth, sourceFullHeight, sourceRowBytes, sourceDataSize,
+          pixelLayout, &frameLayout)) {
     LOG(ERROR) << "Invalid pixel buffer geometry";
     return;
   }
-  const int image_width = (int)sourceWidth;
-  const int fullHeight = (int)sourceFullHeight;
   if (CVPixelBufferLockBaseAddress(pixelBuffer, 0) != kCVReturnSuccess) {
     LOG(ERROR) << "Could not lock pixel buffer base address";
     return;
@@ -390,43 +396,44 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
     return;
   }
-  int image_height;
-  unsigned char *sourceStartAddr;
-  if (fullHeight <= image_width) {
-    image_height = fullHeight;
-    sourceStartAddr = sourceBaseAddr;
-  } else {
-    image_height = image_width;
-    const int marginY = ((fullHeight - image_width) / 2);
-    sourceStartAddr = (sourceBaseAddr + (marginY * sourceRowBytes));
-  }
-  if (image_channels < wanted_input_channels) {
-    CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
-    return;
-  }
   tensorflow::Tensor image_tensor(
       tensorflow::DT_FLOAT,
       tensorflow::TensorShape(
           {1, wanted_input_height, wanted_input_width, wanted_input_channels}));
   auto image_tensor_mapped = image_tensor.tensor<float, 4>();
-  tensorflow::uint8 *in = sourceStartAddr;
   float *out = image_tensor_mapped.data();
+  bool sampledFrame = true;
   for (int y = 0; y < wanted_input_height; ++y) {
     float *out_row = out + (y * wanted_input_width * wanted_input_channels);
     for (int x = 0; x < wanted_input_width; ++x) {
-      const size_t in_x =
-          (static_cast<size_t>(x) * sourceWidth) /
-          static_cast<size_t>(wanted_input_width);
-      const size_t in_y =
-          (static_cast<size_t>(y) * static_cast<size_t>(image_height)) /
-          static_cast<size_t>(wanted_input_height);
-      tensorflow::uint8 *in_pixel =
-          in + (in_y * sourceRowBytes) + (in_x * image_channels);
+      size_t sourceOffset = 0;
+      if (!tensorflow_camera::SourcePixelOffset(
+              frameLayout, static_cast<size_t>(x), static_cast<size_t>(y),
+              static_cast<size_t>(wanted_input_width),
+              static_cast<size_t>(wanted_input_height), &sourceOffset)) {
+        sampledFrame = false;
+        break;
+      }
+      tensorflow::uint8 *in_pixel = sourceBaseAddr + sourceOffset;
       float *out_pixel = out_row + (x * wanted_input_channels);
       for (int c = 0; c < wanted_input_channels; ++c) {
-        out_pixel[c] = (in_pixel[c] - input_mean) / input_std;
+        size_t sourceChannel = 0;
+        if (!tensorflow_camera::SourceChannelOffset(
+                pixelLayout, static_cast<size_t>(c), &sourceChannel)) {
+          sampledFrame = false;
+          break;
+        }
+        out_pixel[c] = (in_pixel[sourceChannel] - input_mean) / input_std;
       }
     }
+    if (!sampledFrame) {
+      break;
+    }
+  }
+  if (!sampledFrame) {
+    LOG(ERROR) << "Invalid pixel buffer sampling arithmetic";
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+    return;
   }
 
   if (tf_session.get()) {
@@ -445,13 +452,13 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         LOG(ERROR) << "Skipping model output with unexpected dtype";
       } else {
         auto predictions = output->flat<float>();
-        const int prediction_count = (int)predictions.size();
-        const int label_count = (int)labels.size();
-        const int result_count =
+        const size_t prediction_count = static_cast<size_t>(predictions.size());
+        const size_t label_count = labels.size();
+        const size_t result_count =
             prediction_count < label_count ? prediction_count : label_count;
 
         NSMutableDictionary *newValues = [NSMutableDictionary dictionary];
-        for (int index = 0; index < result_count; index += 1) {
+        for (size_t index = 0; index < result_count; index += 1) {
           const float predictionValue = predictions(index);
           if (!std::isfinite(predictionValue)) {
             LOG(ERROR) << "Skipping non-finite model prediction";

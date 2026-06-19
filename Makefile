@@ -10,6 +10,8 @@ lint:
 
 test:
 	$(PYTHON) "$(ROOT)/scripts/check-ios-camera-source.py" --mode behavior
+	CXX="$(CXX)" "$(ROOT)/scripts/run-frame-preprocessing-tests.sh"
+	CXX="$(CXX)" $(PYTHON) "$(ROOT)/scripts/test_frame_preprocessing_mutations.py"
 	CXX="$(CXX)" "$(ROOT)/scripts/run-prediction-range-tests.sh"
 
 contract-test:
@@ -17,11 +19,7 @@ contract-test:
 	$(PYTHON) "$(ROOT)/scripts/test_credential_fixture_policy.py"
 
 build: lint
-	@if command -v "$(XCODEBUILD)" >/dev/null 2>&1; then \
-		"$(XCODEBUILD)" -project "$(ROOT)/app/tensorflow_camera.xcodeproj" -target CameraExample -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build; \
-	else \
-		echo "xcodebuild not found; static project checks completed"; \
-	fi
+	XCODEBUILD="$(XCODEBUILD)" "$(ROOT)/scripts/run-ios-build.sh"
 
 verify: lint contract-test test build
 

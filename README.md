@@ -67,13 +67,14 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   actions to fail closed when capture setup is unavailable.
   Capture teardown checks require the session to stop, the sample delegate to
   detach, and already-enqueued callbacks to drain before queue release, then
-  clear the borrowed session pointer. Queue identity avoids a synchronous
+  release the owned session. Queue identity avoids a synchronous
   self-deadlock if cleanup is already executing on the callback queue.
-  Frame preprocessing checks also preserve source `x`/`y` coordinate mapping
-  and `CVPixelBuffer` row-stride addressing while rejecting zero, oversized,
-  or undersized-stride frame layouts before memory is locked. Sampling
-  coordinate arithmetic is promoted before multiplication so accepted large
-  dimensions cannot overflow signed resize intermediates. The checks guard
+  Frame preprocessing checks center-crop portrait and landscape frames, convert
+  supported ARGB/BGRA bytes to TensorFlow RGB order, and preserve
+  `CVPixelBuffer` row-stride addressing while rejecting planar, zero,
+  oversized, undersized-stride, truncated, or overflow-prone layouts before
+  inference. Host-native C++ tests and hostile mutations exercise channel,
+  crop, byte-bound, and arithmetic invariants. The checks guard
   missing model or label assets from becoming fatal launch crashes, including the shared
   bundle-resource lookup used by plain and memory-mapped model loading. Label
   loading also fails early when the labels file cannot be opened and skips empty
@@ -92,7 +93,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   reject private-key markers at every other path.
   When
   `xcodebuild` is installed, the `build` target also attempts an iOS simulator
-  build with code signing disabled.
+  build with code signing disabled and keeps all products in a temporary
+  directory outside the case-sensitive `app/BUILD` source path.
 - Static project checks also require completed canonical plans under `docs/plans`.
 - GitHub Actions runs the same `make check` baseline on fixed Ubuntu 24.04 for
   pushes and pull requests without requiring Xcode. The workflow has read-only
@@ -171,6 +173,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   repository-wide private-key marker policy.
 - See `docs/plans/2026-06-17-model-prediction-range-validation.md` for executable
   softmax probability boundary validation before prediction UI state.
+- See `docs/plans/2026-06-19-frame-preprocessing-native-contract.md` for the
+  host-native RGB, crop, byte-bound, arithmetic, and ownership contract.
 
 ## Contributing
 
