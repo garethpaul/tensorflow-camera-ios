@@ -96,6 +96,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   build with code signing disabled and keeps all products in a temporary
   directory outside the case-sensitive `app/BUILD` source path.
 - Static project checks also require completed canonical plans under `docs/plans`.
+- `make root-test` exercises repository-root, shell, Make metadata, trusted
+  Python/C++/Xcode tool values, and non-executing modes without Xcode.
 - GitHub Actions runs the same `make check` baseline on fixed Ubuntu 24.04 for
   pushes and pull requests without requiring Xcode. The workflow has read-only
   repository permissions, credential-free checkout, concurrency cancellation,
@@ -164,6 +166,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   frame sampling coordinate arithmetic.
 - See `docs/plans/2026-06-14-make-root-override-protection.md` for authoritative
   repository-root selection across all Make aliases.
+- See `docs/plans/2026-06-21-make-authority-isolation.md` for quoted checkout
+  paths, fixed shell authority, Make mode rejection, and startup boundaries.
 - See `docs/plans/2026-06-14-finite-model-predictions.md` for inference-output
   validation before prediction UI state.
 - See `docs/plans/2026-06-14-model-output-dtype-validation.md` for guarded
