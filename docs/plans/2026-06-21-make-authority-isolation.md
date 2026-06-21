@@ -22,7 +22,10 @@ Make modes, preload files, and additional `-f` programs could replace checks.
   case, one raw tool Make-syntax rejection, two `MAKEFILE_LIST` rejections, two
   contained startup-boundary cases, and ten mode-flag rejections.
 - Repository and external-directory `make check` passed with the SDK-free gate.
-- Exact-head hosted contract verification remains required before merge.
+- Exact PR-head contract run `27899101898` and CodeQL run `27899101427`
+  passed before merge.
+- Merged-head contract run `27899143177` and CodeQL run `27899142950`
+  passed at `5900fae9e9c0aa6df281959b3f8677a71f927df3`.
 
 ## Trust Boundary
 
