@@ -28,4 +28,4 @@ jobs:
         with:
           python-version: "3.12"
       - name: Run baseline
-        run: make check
+        run: /usr/bin/make check

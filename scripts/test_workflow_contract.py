@@ -38,9 +38,10 @@ mutations = {
     "unbounded job": mutate("unbounded job", "    timeout-minutes: 5\n", ""),
     "continued failure": mutate("continued failure", "    steps:", "    continue-on-error: true\n    steps:"),
     "wrong Python": mutate("wrong Python", 'python-version: "3.12"', 'python-version: "3.11"'),
-    "dependency installation": mutate("dependency installation", "run: make check", "run: pip install -r requirements.txt && make check"),
-    "hosted Xcode": mutate("hosted Xcode", "run: make check", "run: xcodebuild build && make check"),
-    "weakened gate": mutate("weakened gate", "run: make check", "run: make lint"),
+    "dependency installation": mutate("dependency installation", "run: /usr/bin/make check", "run: pip install -r requirements.txt && /usr/bin/make check"),
+    "hosted Xcode": mutate("hosted Xcode", "run: /usr/bin/make check", "run: xcodebuild build && /usr/bin/make check"),
+    "unqualified make": mutate("unqualified make", "run: /usr/bin/make check", "run: make check"),
+    "weakened gate": mutate("weakened gate", "run: /usr/bin/make check", "run: /usr/bin/make lint"),
 }
 
 for description, workflow in mutations.items():

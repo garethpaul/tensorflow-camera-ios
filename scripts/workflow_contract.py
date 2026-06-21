@@ -45,7 +45,7 @@ def validate(workflow):
         errors.append("configure checkout credential persistence exactly once")
     if len(re.findall(r'^          python-version: "3\.12"$', workflow, re.MULTILINE)) != 1:
         errors.append("select Python 3.12 exactly once")
-    if len(re.findall(r"^        run: make check$", workflow, re.MULTILINE)) != 1:
+    if len(re.findall(r"^        run: /usr/bin/make check$", workflow, re.MULTILINE)) != 1:
         errors.append("run the canonical gate exactly once")
     if "continue-on-error" in workflow:
         errors.append("not allow contract failures")

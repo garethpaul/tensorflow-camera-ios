@@ -23,6 +23,7 @@ CALLBACK_DRAIN_PLAN = DOCS_PLANS / "2026-06-12-capture-callback-drain.md"
 FRAME_LAYOUT_PLAN = DOCS_PLANS / "2026-06-13-frame-layout-validation.md"
 SAMPLING_ARITHMETIC_PLAN = DOCS_PLANS / "2026-06-13-sampling-coordinate-arithmetic.md"
 ROOT_OVERRIDE_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
+MAKE_AUTHORITY_PLAN = DOCS_PLANS / "2026-06-21-make-authority-isolation.md"
 FINITE_PREDICTIONS_PLAN = DOCS_PLANS / "2026-06-14-finite-model-predictions.md"
 OUTPUT_DTYPE_PLAN = DOCS_PLANS / "2026-06-14-model-output-dtype-validation.md"
 CREDENTIAL_FIXTURE_PLAN = DOCS_PLANS / "2026-06-15-upstream-credential-fixture-provenance.md"
@@ -107,6 +108,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-13-sampling-coordinate-arithmetic.md is missing")
     if not ROOT_OVERRIDE_PLAN.exists():
         errors.append("docs/plans/2026-06-14-make-root-override-protection.md is missing")
+    if not MAKE_AUTHORITY_PLAN.exists():
+        errors.append("docs/plans/2026-06-21-make-authority-isolation.md is missing")
     if not FINITE_PREDICTIONS_PLAN.exists():
         errors.append("docs/plans/2026-06-14-finite-model-predictions.md is missing")
     if not OUTPUT_DTYPE_PLAN.exists():
@@ -317,43 +320,57 @@ def project_checks():
             errors.append(f"project is missing expected setting: {fragment}")
 
     makefile = read_text("Makefile")
-    root_declaration = "override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))"
+    root_declaration = "override ROOT := $(shell path='$(subst ','\"'\"',$(value MAKEFILE_LIST))'; path=$$(printf '%s' \"$$path\" | /usr/bin/sed 's/^ //'); [ -f \"$$path\" ] || exit 1; directory=$$(/usr/bin/dirname -- \"$$path\"); CDPATH= cd -- \"$$directory\" && /bin/pwd -P)"
     root_assignments = re.findall(r"^(?:override\s+)?ROOT\s*[:+?]?=", makefile, re.MULTILINE)
     if len(root_assignments) != 1 or makefile.count(root_declaration) != 1:
         errors.append("Makefile must contain exactly one protected repository-root declaration")
-    tool_and_root_block = "\n".join((
+    tool_contracts = (
         "PYTHON ?= python3",
         "CXX ?= c++",
         "XCODEBUILD ?= xcodebuild",
-        root_declaration,
-    ))
-    if makefile.count(tool_and_root_block) != 1:
+        "override PYTHON := $(value PYTHON)",
+        "override CXX := $(value CXX)",
+        "override XCODEBUILD := $(value XCODEBUILD)",
+        "export PYTHON CXX XCODEBUILD",
+        "override SHELL := /bin/sh",
+        "override .SHELLFLAGS := -c",
+    )
+    if any(makefile.count(contract) != 1 for contract in tool_contracts) or max(makefile.index(contract) for contract in tool_contracts) > makefile.index(root_declaration):
         errors.append("Makefile must keep tool overrides before the protected repository root")
-    if '$(PYTHON) "$(ROOT)/scripts/test_credential_fixture_policy.py"' not in makefile:
+    if '"$$PYTHON" "$$ROOT/scripts/test_credential_fixture_policy.py"' not in makefile:
         errors.append("Makefile contract-test must run the credential fixture policy tests")
-    if 'CXX="$(CXX)" "$(ROOT)/scripts/run-prediction-range-tests.sh"' not in makefile:
+    if 'CXX="$$CXX" "$$ROOT/scripts/run-prediction-range-tests.sh"' not in makefile:
         errors.append("Makefile test must execute the model prediction range tests")
-    if 'CXX="$(CXX)" "$(ROOT)/scripts/run-frame-preprocessing-tests.sh"' not in makefile:
+    if 'CXX="$$CXX" "$$ROOT/scripts/run-frame-preprocessing-tests.sh"' not in makefile:
         errors.append("Makefile test must execute frame preprocessing tests")
-    if 'CXX="$(CXX)" $(PYTHON) "$(ROOT)/scripts/test_frame_preprocessing_mutations.py"' not in makefile:
+    if 'CXX="$$CXX" "$$PYTHON" "$$ROOT/scripts/test_frame_preprocessing_mutations.py"' not in makefile:
         errors.append("Makefile test must execute frame preprocessing mutations")
     for fragment in (
-        ".PHONY: build check contract-test lint test verify",
+        ".DEFAULT_GOAL := check",
+        ".PHONY: __repository-make-authority build check contract-test lint root-test test verify",
+        ".SECONDEXPANSION:",
+        "$(error MAKEFLAGS must not be overridden for repository verification)",
+        "$(error non-executing or error-ignoring MAKEFLAGS are not supported for repository verification)",
+        "$(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)",
+        "$(error MAKEFILE_LIST must not be overridden)",
         "build: lint",
-        "verify: lint contract-test test build",
+        "verify: root-test lint contract-test test build",
         "check: verify",
-        '"$(ROOT)/scripts/check-ios-camera-source.py"',
-        '"$(ROOT)/scripts/test_workflow_contract.py"',
-        '"$(ROOT)/scripts/run-prediction-range-tests.sh"',
-        '"$(ROOT)/scripts/run-frame-preprocessing-tests.sh"',
-        '"$(ROOT)/scripts/test_frame_preprocessing_mutations.py"',
-        '"$(ROOT)/scripts/run-ios-build.sh"',
+        '"$$ROOT/scripts/check-ios-camera-source.py"',
+        '"$$ROOT/scripts/test_workflow_contract.py"',
+        '"$$ROOT/scripts/run-prediction-range-tests.sh"',
+        '"$$ROOT/scripts/run-frame-preprocessing-tests.sh"',
+        '"$$ROOT/scripts/test_frame_preprocessing_mutations.py"',
+        '"$$ROOT/scripts/run-ios-build.sh"',
+        '"$$ROOT/scripts/test-makefile-root.sh"',
     ):
         if fragment not in makefile:
             errors.append(f"Makefile is missing root-independent fragment: {fragment}")
 
     if "docs/plans/2026-06-14-make-root-override-protection.md" not in read_text("README.md"):
         errors.append("README must index Make root override protection evidence")
+    if "docs/plans/2026-06-21-make-authority-isolation.md" not in read_text("README.md"):
+        errors.append("README must index Make authority isolation evidence")
     if "docs/plans/2026-06-14-finite-model-predictions.md" not in read_text("README.md"):
         errors.append("README must index finite model prediction evidence")
     if "docs/plans/2026-06-14-model-output-dtype-validation.md" not in read_text("README.md"):

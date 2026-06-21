@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-06-21
+
+- Isolated verification from caller-selected roots, shells, bypassing Make
+  modes, preload metadata, and additional Makefiles while preserving trusted
+  Python, C++ compiler, and Xcode executable overrides.
+
 ## 2026-06-19
 
 - Corrected ARGB/BGRA camera bytes to TensorFlow RGB order, added symmetric
