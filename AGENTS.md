@@ -33,6 +33,9 @@
 - Keep README verification notes in sync when commands, fixtures, or supported toolchains change.
 - Preserve model prediction range validation before Objective-C publication;
   `make test` executes its framework-independent C++ boundary test.
+- Preserve the three-part camera running-state gate: explicit user capture
+  intent, visible controller state, and active application state. Lifecycle
+  suspension must not rewrite the user's Freeze/Continue choice.
 - Keep hosted verification read-only and credential-free with immutable action
   pins; update the structural workflow mutations with any intentional policy
   change.

@@ -35,6 +35,9 @@
   NSMutableDictionary *oldPredictionValues;
   NSMutableArray *labelLayers;
   AVCaptureSession *session;
+  BOOL captureRequested;
+  BOOL viewIsVisible;
+  BOOL applicationIsActive;
   std::unique_ptr<tensorflow::Session> tf_session;
   std::unique_ptr<tensorflow::MemmappedEnv> tf_memmapped_env;
   std::vector<std::string> labels;

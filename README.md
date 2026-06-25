@@ -64,7 +64,10 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   crash paths, guarded camera switching, pixel-buffer lock/unlock handling, and
   model output/label bounds. They also require still-image and video-data
   output setup failures to fail closed before capture starts, and freeze/resume
-  actions to fail closed when capture setup is unavailable.
+  actions to fail closed when capture setup is unavailable. Capture runs only
+  while the controller is visible, the application is active, and the user has
+  requested live capture; lifecycle suspension preserves Freeze/Continue
+  intent.
   Capture teardown checks require the session to stop, the sample delegate to
   detach, and already-enqueued callbacks to drain before queue release, then
   release the owned session. Queue identity avoids a synchronous
@@ -179,6 +182,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   softmax probability boundary validation before prediction UI state.
 - See `docs/plans/2026-06-19-frame-preprocessing-native-contract.md` for the
   host-native RGB, crop, byte-bound, arithmetic, and ownership contract.
+- See `docs/plans/2026-06-25-active-screen-camera-lifecycle.md` for the
+  active-screen capture gate and preserved Freeze/Continue intent.
 
 ## Contributing
 

@@ -53,6 +53,9 @@ static char VideoDataOutputQueueKey;
 
 @interface CameraExampleViewController (InternalMethods)
 - (void)setupAVCapture;
+- (void)updateCaptureRunningState;
+- (void)applicationDidBecomeActive:(NSNotification *)notification;
+- (void)applicationWillResignActive:(NSNotification *)notification;
 - (void)drainVideoDataOutputQueue;
 - (void)teardownAVCapture;
 @end
@@ -178,8 +181,31 @@ static char VideoDataOutputQueueKey;
   [rootLayer setMasksToBounds:YES];
   [previewLayer setFrame:[rootLayer bounds]];
   [rootLayer addSublayer:previewLayer];
-  [session startRunning];
+  [self updateCaptureRunningState];
 
+}
+
+- (void)updateCaptureRunningState {
+  if (!session) {
+    return;
+  }
+  const BOOL shouldRun =
+      captureRequested && viewIsVisible && applicationIsActive;
+  if (shouldRun && ![session isRunning]) {
+    [session startRunning];
+  } else if (!shouldRun && [session isRunning]) {
+    [session stopRunning];
+  }
+}
+
+- (void)applicationDidBecomeActive:(NSNotification *)notification {
+  applicationIsActive = YES;
+  [self updateCaptureRunningState];
+}
+
+- (void)applicationWillResignActive:(NSNotification *)notification {
+  applicationIsActive = NO;
+  [self updateCaptureRunningState];
 }
 
 - (void)drainVideoDataOutputQueue {
@@ -268,8 +294,9 @@ static char VideoDataOutputQueueKey;
     return;
   }
 
-  if ([session isRunning]) {
-    [session stopRunning];
+  if (captureRequested) {
+    captureRequested = NO;
+    [self updateCaptureRunningState];
     [sender setTitle:@"Continue" forState:UIControlStateNormal];
 
     flashView = [[UIView alloc] initWithFrame:[previewView frame]];
@@ -294,7 +321,8 @@ static char VideoDataOutputQueueKey;
         }];
 
   } else {
-    [session startRunning];
+    captureRequested = YES;
+    [self updateCaptureRunningState];
     [sender setTitle:@"Freeze Frame" forState:UIControlStateNormal];
   }
 }
@@ -490,6 +518,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 }
 
 - (void)dealloc {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
   [self teardownAVCapture];
   [square release];
   [synth release];
@@ -561,6 +590,21 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 
 - (void)viewDidLoad {
   [super viewDidLoad];
+  captureRequested = YES;
+  viewIsVisible = NO;
+  applicationIsActive =
+      [[UIApplication sharedApplication] applicationState] ==
+      UIApplicationStateActive;
+  NSNotificationCenter *notificationCenter =
+      [NSNotificationCenter defaultCenter];
+  [notificationCenter addObserver:self
+                         selector:@selector(applicationDidBecomeActive:)
+                             name:UIApplicationDidBecomeActiveNotification
+                           object:nil];
+  [notificationCenter addObserver:self
+                         selector:@selector(applicationWillResignActive:)
+                             name:UIApplicationWillResignActiveNotification
+                           object:nil];
   square = [[UIImage imageNamed:@"squarePNG"] retain];
   synth = [[AVSpeechSynthesizer alloc] init];
   labelLayers = [[NSMutableArray alloc] init];
@@ -599,6 +643,8 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
+  viewIsVisible = YES;
+  [self updateCaptureRunningState];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -606,6 +652,8 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
+  viewIsVisible = NO;
+  [self updateCaptureRunningState];
   [super viewWillDisappear:animated];
 }
 
