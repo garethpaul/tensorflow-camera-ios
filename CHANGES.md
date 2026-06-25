@@ -1,5 +1,15 @@
 # Changes
 
+## 2026-06-25 07:18:07 PDT
+
+- Limited camera capture to the intersection of explicit user intent, visible
+  controller state, and active application state. Leaving the screen or
+  resigning active now suspends capture without losing the user's Freeze or
+  Continue choice.
+- Added lifecycle contract checks that reject eager setup starts, app-state or
+  visibility bypasses, session-derived user intent, and observer cleanup
+  regressions.
+
 ## 2026-06-21
 
 - Isolated verification from caller-selected roots, shells, bypassing Make

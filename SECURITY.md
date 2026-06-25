@@ -45,6 +45,9 @@ Helpful reports include:
 - Camera teardown stops local capture, detaches frame callbacks, and drains
   already-enqueued work before releasing its serial queue. Queue-specific
   identity prevents that drain from synchronously waiting on itself.
+- Camera capture is suspended whenever the controller is hidden or the
+  application resigns active, without silently changing the user's explicit
+  Freeze/Continue choice.
 - Camera preprocessing rejects impossible dimensions and undersized Core Video
   row strides before locking or reading frame memory.
 - Camera sampling coordinate arithmetic promotes resize-loop intermediates

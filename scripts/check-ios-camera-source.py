@@ -29,6 +29,7 @@ OUTPUT_DTYPE_PLAN = DOCS_PLANS / "2026-06-14-model-output-dtype-validation.md"
 CREDENTIAL_FIXTURE_PLAN = DOCS_PLANS / "2026-06-15-upstream-credential-fixture-provenance.md"
 PREDICTION_RANGE_PLAN = DOCS_PLANS / "2026-06-17-model-prediction-range-validation.md"
 FRAME_PREPROCESSING_NATIVE_PLAN = DOCS_PLANS / "2026-06-19-frame-preprocessing-native-contract.md"
+ACTIVE_SCREEN_LIFECYCLE_PLAN = DOCS_PLANS / "2026-06-25-active-screen-camera-lifecycle.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
@@ -120,6 +121,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-17-model-prediction-range-validation.md is missing")
     if not FRAME_PREPROCESSING_NATIVE_PLAN.exists():
         errors.append("docs/plans/2026-06-19-frame-preprocessing-native-contract.md is missing")
+    if not ACTIVE_SCREEN_LIFECYCLE_PLAN.exists():
+        errors.append("docs/plans/2026-06-25-active-screen-camera-lifecycle.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -414,6 +417,7 @@ def behavior_checks():
         return errors
 
     source = read_text("app/CameraExampleViewController.mm")
+    header_source = read_text("app/CameraExampleViewController.h")
     utils_source = read_text("app/tensorflow_utils.mm")
     validation_source = read_text("app/prediction_validation.h")
     validation_test = read_text("tests/prediction_validation_test.cc")
@@ -422,6 +426,78 @@ def behavior_checks():
     frame_test = read_text("tests/frame_preprocessing_test.cc")
     frame_runner = read_text("scripts/run-frame-preprocessing-tests.sh")
     frame_mutations = read_text("scripts/test_frame_preprocessing_mutations.py")
+    lifecycle_contracts = [
+        "captureRequested = YES;",
+        "viewIsVisible = YES;",
+        "viewIsVisible = NO;",
+        "UIApplicationWillResignActiveNotification",
+        "UIApplicationDidBecomeActiveNotification",
+        "- (void)updateCaptureRunningState",
+        "captureRequested && viewIsVisible",
+        "applicationIsActive",
+        "[[NSNotificationCenter defaultCenter] removeObserver:self];",
+    ]
+    for contract in lifecycle_contracts:
+        if contract not in source:
+            errors.append("camera active-screen lifecycle contract is missing: " + contract)
+    for declaration in (
+        "BOOL captureRequested;",
+        "BOOL viewIsVisible;",
+        "BOOL applicationIsActive;",
+    ):
+        if declaration not in header_source:
+            errors.append("camera lifecycle state is missing from the controller: " + declaration)
+    setup_start = source.find("- (void)setupAVCapture {", source.find("@implementation"))
+    setup_end = source.find("- (void)updateCaptureRunningState", setup_start)
+    if min(setup_start, setup_end) < 0:
+        errors.append("camera setup lifecycle boundary is missing")
+    if "[session startRunning];" in source[setup_start:setup_end]:
+        errors.append("camera setup must not start capture before the view is active")
+    update_start = source.find("- (void)updateCaptureRunningState {", setup_start)
+    update_end = source.find("- (void)applicationDidBecomeActive:", update_start)
+    update_source = source[update_start:update_end]
+    for contract in (
+        "captureRequested && viewIsVisible && applicationIsActive",
+        "[session startRunning];",
+        "[session stopRunning];",
+    ):
+        if contract not in update_source:
+            errors.append("camera running-state gate is incomplete: " + contract)
+    lifecycle_methods = (
+        ("- (void)applicationDidBecomeActive:", "applicationIsActive = YES;"),
+        ("- (void)applicationWillResignActive:", "applicationIsActive = NO;"),
+        ("- (void)viewWillAppear:", "viewIsVisible = YES;"),
+        ("- (void)viewWillDisappear:", "viewIsVisible = NO;"),
+    )
+    for method, assignment in lifecycle_methods:
+        method_start = source.find(method, source.find("@implementation"))
+        update_call = source.find("[self updateCaptureRunningState];", method_start)
+        assignment_position = source.find(assignment, method_start)
+        next_method = source.find("\n- (", method_start + 1)
+        if min(method_start, assignment_position, update_call, next_method) < 0 or not (
+            method_start < assignment_position < update_call < next_method
+        ):
+            errors.append("camera lifecycle state must update before capture reconciliation: " + method)
+    freeze_start = source.find("- (IBAction)takePicture")
+    freeze_end = source.find("+ (CGRect)videoPreviewBoxForGravity")
+    if "if ([session isRunning])" in source[freeze_start:freeze_end]:
+        errors.append("freeze intent must not depend on app-driven capture suspension")
+    freeze_source = source[freeze_start:freeze_end]
+    for assignment in ("captureRequested = NO;", "captureRequested = YES;"):
+        assignment_position = freeze_source.find(assignment)
+        update_call = freeze_source.find("[self updateCaptureRunningState];", assignment_position)
+        if assignment_position < 0 or update_call < assignment_position:
+            errors.append("freeze intent must be recorded before capture reconciliation: " + assignment)
+    dealloc_start = source.find("- (void)dealloc")
+    teardown_call = source.find("[self teardownAVCapture];", dealloc_start)
+    observer_removal = source.find(
+        "[[NSNotificationCenter defaultCenter] removeObserver:self];",
+        dealloc_start,
+    )
+    if min(dealloc_start, observer_removal, teardown_call) < 0 or not (
+        dealloc_start < observer_removal < teardown_call
+    ):
+        errors.append("camera controller must remove app lifecycle observers before teardown")
     teardown_match = re.search(r"- \(void\)teardownAVCapture \{(.*?)\n\}", source, re.DOTALL)
     if not teardown_match:
         errors.append("camera controller teardown method is missing")

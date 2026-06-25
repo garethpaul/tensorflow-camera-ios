@@ -20,6 +20,8 @@ Priority:
 - Keep no-camera and unsupported-frame cases from becoming crash-only paths
 - Keep still-image and video-data output setup fail-closed
 - Keep freeze/resume controls fail-closed when capture setup is unavailable
+- Run camera capture only for a visible controller in an active application,
+  while preserving explicit Freeze/Continue intent across lifecycle changes
 - Keep front/back camera switching fail-closed when replacement inputs fail
 - Keep camera frame preprocessing faithful to source coordinates and row stride
 - Reject malformed pixel-buffer geometry before frame memory access
