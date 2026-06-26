@@ -30,6 +30,8 @@ Priority:
 - Keep model prediction range validation ahead of Objective-C publication
 - Keep model output dtype validation ahead of typed prediction access
 - Keep model outputs and labels bounded before rendering predictions
+- Keep no-camera preprocessing and score-to-label selection executable with a
+  host C++11 compiler
 - Keep missing model or label assets user-visible instead of fatal
 - Keep shared bundle-resource lookup non-fatal for model paths
 - Keep label file loading fail-closed before prediction rendering
@@ -48,7 +50,6 @@ Priority:
 
 Next priorities:
 
-- Add a no-camera test path for image preprocessing and label output
 - Clarify licensing/provenance for downloaded model assets
 - Keep vendored test credential provenance synchronized with TensorFlow upstream
 - Modernize ML dependencies only in a dedicated compatibility pass

@@ -94,7 +94,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   softmax probability range before UI publication. Model output dtype validation
   rejects non-float tensors before typed prediction access. The portable test
   target compiles and executes this probability boundary with a local C++11
-  compiler. The checks also preserve
+  compiler. A second no-camera C++ boundary maps scores to labels, preserves
+  the shorter output/label count, applies the strict display threshold, and
+  fails closed for non-finite thresholds and malformed scores. The checks also preserve
   manual cleanup of controller-owned prediction and speech state and verify
   SHA-256 digests for the graph, labels, sample image, and reviewed upstream
   credential fixture used by vendored TensorFlow OAuth tests. Repository scans
@@ -178,6 +180,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   paths, fixed shell authority, Make mode rejection, and startup boundaries.
 - See `docs/plans/2026-06-14-finite-model-predictions.md` for inference-output
   validation before prediction UI state.
+- See `docs/plans/2026-06-26-prediction-output-native-contract.md` for the
+  no-camera score-to-label selection boundary.
 - See `docs/plans/2026-06-14-model-output-dtype-validation.md` for guarded
   TensorFlow prediction tensor access.
 - See `docs/plans/2026-06-15-upstream-credential-fixture-provenance.md` for the

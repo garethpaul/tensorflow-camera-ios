@@ -14,7 +14,7 @@ for tool in "$FAKE_PYTHON" "$FAKE_CXX" "$FAKE_XCODE"; do cat >"$tool" <<'TOOL'
 printf '%s|%s|%s\n' "$PWD" "$0" "$*" >> "$CAMERA_COMMAND_LOG"
 TOOL
 chmod +x "$tool"; done
-for script in run-frame-preprocessing-tests.sh run-prediction-range-tests.sh run-ios-build.sh; do cat >"$CHECKOUT/scripts/$script" <<'SCRIPT'
+for script in run-frame-preprocessing-tests.sh run-prediction-range-tests.sh run-prediction-output-tests.sh run-ios-build.sh; do cat >"$CHECKOUT/scripts/$script" <<'SCRIPT'
 #!/bin/sh
 printf '%s|%s|%s|%s\n' "$PWD" "$0" "${CXX:-}" "${XCODEBUILD:-}" >> "$CAMERA_COMMAND_LOG"
 SCRIPT

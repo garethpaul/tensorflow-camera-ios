@@ -33,6 +33,8 @@
 - Keep README verification notes in sync when commands, fixtures, or supported toolchains change.
 - Preserve model prediction range validation before Objective-C publication;
   `make test` executes its framework-independent C++ boundary test.
+- Preserve host-native score-to-label selection and its hostile mutations;
+  camera-free tests must cover threshold, range, label-bound, and association behavior.
 - Preserve the three-part camera running-state gate: explicit user capture
   intent, visible controller state, and active application state. Lifecycle
   suspension must not rewrite the user's Freeze/Continue choice.

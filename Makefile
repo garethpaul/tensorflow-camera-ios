@@ -63,6 +63,8 @@ test:
 	CXX="$$CXX" "$$ROOT/scripts/run-frame-preprocessing-tests.sh"
 	CXX="$$CXX" "$$PYTHON" "$$ROOT/scripts/test_frame_preprocessing_mutations.py"
 	CXX="$$CXX" "$$ROOT/scripts/run-prediction-range-tests.sh"
+	CXX="$$CXX" "$$ROOT/scripts/run-prediction-output-tests.sh"
+	CXX="$$CXX" "$$PYTHON" "$$ROOT/scripts/test_prediction_output_mutations.py"
 
 contract-test:
 	"$$PYTHON" "$$ROOT/scripts/test_workflow_contract.py"

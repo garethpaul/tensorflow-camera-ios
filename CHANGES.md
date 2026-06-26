@@ -1,5 +1,70 @@
 # Changes
 
+## 2026-06-26 00:15 PDT - P2 - Add no-camera label output verification
+
+### Summary
+
+Extracted model-score-to-label selection into a host-native C++11 boundary so
+preprocessing and label output can be verified without TensorFlow archives,
+UIKit, a simulator, or camera hardware.
+
+### Work completed
+
+- Added deterministic labeled-prediction selection bounded by available labels.
+- Preserved finite/unit-range validation, the strict display threshold, model
+  order, Objective-C UTF-8 conversion, and existing rejection logs.
+- Added executable selector tests and five compile-and-run hostile mutations.
+- Integrated the new runner into `make test` and the Make-root authority fixture.
+- Added completed plan, maintainer guidance, and fail-closed source/test checks.
+- Advanced the roadmap to downloaded model asset licensing and provenance.
+
+### Threads
+
+- None; camera controller, existing native seams, tests, plans, and roadmap were
+  reviewed directly.
+
+### Files changed
+
+- `app/prediction_output.h` — framework-independent score-to-label selection.
+- `app/CameraExampleViewController.mm` — shared selector integration.
+- `tests/prediction_output_test.cc` — no-camera behavior coverage.
+- `scripts/run-prediction-output-tests.sh` — isolated C++11 runner.
+- `scripts/test_prediction_output_mutations.py` — five hostile mutations.
+- `Makefile`, `scripts/test-makefile-root.sh`, and
+  `scripts/check-ios-camera-source.py` — full gate integration and contracts.
+- `README.md`, `SECURITY.md`, `VISION.md`, `AGENTS.md`, and
+  `docs/plans/2026-06-26-prediction-output-native-contract.md` — guidance and evidence.
+- `CHANGES.md` — this cycle record.
+
+### Validation
+
+- RED native runner — failed because `prediction_output.h` was absent.
+- `make test` — passed preprocessing, prediction range, prediction output, and
+  eleven combined native hostile mutations.
+- Initial `make check` — failed because Make-root isolation did not stub the new
+  shell runner; the fixture was corrected.
+- Final `make check` — passed project/behavior checks, 35 Make authority cases,
+  17 workflow mutations, five credential scenarios, all native C++ tests, and
+  eleven native mutations.
+- Xcode build — skipped explicitly because `xcodebuild` is unavailable.
+- `git diff --check` — passed.
+
+### Bugs / findings
+
+- P2 coverage: label-bound and threshold behavior was executable only inside
+  the legacy Objective-C++ camera path.
+- P2 test integration: adding a shell runner requires the Make-root fixture to
+  stub it or every isolated `check`/`verify` case fails.
+
+### Blockers
+
+- Historical Xcode and generated TensorFlow/protobuf archives remain
+  unavailable; no full iOS link or camera runtime claim is made.
+
+### Next action
+
+- Clarify licensing and provenance for downloaded model assets.
+
 ## 2026-06-25 23:36 PDT - P2 - Document legacy toolchain reconstruction
 
 ### Summary
