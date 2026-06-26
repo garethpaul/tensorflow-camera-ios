@@ -1,5 +1,43 @@
 # Changes
 
+## 2026-06-26 00:58 PDT - P2 - Clarify model asset provenance
+
+### Summary
+
+Separated the TensorFlow model bundle's Apache-2.0 notice from the independently
+sourced public-domain Grace Hopper sample photograph.
+
+### Work completed
+
+- Added per-file-group provenance beside the checked-in model resources.
+- Verified the graph, labels, and notice are exactly the three files in the
+  pinned official `inception5h.zip` archive.
+- Verified the sample image byte-matches TensorFlow v0.12.0 and Wikimedia
+  Commons' U.S. Navy official portrait by James S. Davis (NH 96919-KN).
+- Added fail-closed documentation contracts, completed plan evidence, and
+  synchronized README, security, roadmap, and maintainer guidance.
+
+### Validation
+
+- Exact image/Commons byte comparison — passed with the pinned SHA-256.
+- Official TensorFlow tag and archive inventory review — passed.
+- `make check` — passed all portable gates; `xcodebuild` remained unavailable.
+- `git diff --check` — passed.
+
+### Bugs / findings
+
+- P2 provenance ambiguity: the directory-level Apache notice did not explain
+  that the sample photograph was outside the model archive and public domain.
+
+### Blockers
+
+- No versioned model card accompanies the historical GCS archive; exact URL,
+  digest, included notice, and installed-file hashes remain the durable record.
+
+### Next action
+
+- Keep vendored test credential provenance synchronized with TensorFlow upstream.
+
 ## 2026-06-26 00:15 PDT - P2 - Add no-camera label output verification
 
 ### Summary

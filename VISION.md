@@ -50,7 +50,6 @@ Priority:
 
 Next priorities:
 
-- Clarify licensing/provenance for downloaded model assets
 - Keep vendored test credential provenance synchronized with TensorFlow upstream
 - Modernize ML dependencies only in a dedicated compatibility pass
 
@@ -59,6 +58,8 @@ Contribution rules:
 - One PR = one focused camera, model, preprocessing, build, or documentation change.
 - Do not commit private images or user camera captures.
 - Keep model downloads reproducible and attributed.
+- Keep per-file asset licensing explicit when archives and sample images have
+  different copyright status.
 - Include device or simulator notes for runtime changes.
 
 ## Security And Responsible Use

@@ -78,12 +78,23 @@ Copy only the expected files after verifying the archive. `make check` pins the
 installed resource digests, including the bundled Apache license. Do not replace
 assets merely because a URL now serves different bytes.
 
+The archive's `LICENSE` identifies the TensorFlow graph and label bundle as
+Apache License 2.0 with a 2015 TensorFlow Authors copyright notice. It does not
+license the separately sourced sample photograph. The per-file attribution and
+copyright boundary is recorded in [`app/data/PROVENANCE.md`](../app/data/PROVENANCE.md).
+
 The bundled `grace_hopper.jpg` is not inside `inception5h.zip`. It byte-matches
 the TensorFlow v0.12.0 iOS camera example at:
 
 ```text
 https://raw.githubusercontent.com/tensorflow/tensorflow/v0.12.0/tensorflow/contrib/ios_examples/camera/data/grace_hopper.jpg
 ```
+
+The same bytes match Wikimedia Commons `File:Grace Hopper.jpg`, the January 20,
+1984 U.S. Navy official portrait by James S. Davis (NH 96919-KN). Commons marks
+the work public domain in the United States as a U.S. federal government work.
+This identification was verified by byte comparison, not inferred from the
+TensorFlow repository's Apache license.
 
 ## Verified Resource Digests
 

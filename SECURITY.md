@@ -42,6 +42,9 @@ Helpful reports include:
   digests for the graph, label set, and sample image.
 - Model labels that fail explicit UTF-8 conversion are skipped before they can
   become invalid Objective-C collection keys.
+- `app/data/PROVENANCE.md` separates the Apache-2.0 TensorFlow graph and label
+  bundle from the public-domain U.S. Navy Grace Hopper portrait; do not treat a
+  shared download host as evidence that unrelated assets share a license.
 - Camera teardown stops local capture, detaches frame callbacks, and drains
   already-enqueued work before releasing its serial queue. Queue-specific
   identity prevents that drain from synchronously waiting on itself.

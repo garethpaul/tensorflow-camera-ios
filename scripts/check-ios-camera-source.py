@@ -31,6 +31,7 @@ PREDICTION_RANGE_PLAN = DOCS_PLANS / "2026-06-17-model-prediction-range-validati
 FRAME_PREPROCESSING_NATIVE_PLAN = DOCS_PLANS / "2026-06-19-frame-preprocessing-native-contract.md"
 ACTIVE_SCREEN_LIFECYCLE_PLAN = DOCS_PLANS / "2026-06-25-active-screen-camera-lifecycle.md"
 PREDICTION_OUTPUT_NATIVE_PLAN = DOCS_PLANS / "2026-06-26-prediction-output-native-contract.md"
+MODEL_ASSET_PROVENANCE_PLAN = DOCS_PLANS / "2026-06-26-model-asset-provenance.md"
 TOOLCHAIN_MODEL_GUIDE = ROOT / "docs" / "toolchain-and-model-assets.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
@@ -84,6 +85,7 @@ def require_paths():
         "app/data/imagenet_comp_graph_label_strings.txt",
         "app/data/grace_hopper.jpg",
         "app/data/LICENSE",
+        "app/data/PROVENANCE.md",
         "docs/toolchain-and-model-assets.md",
         CREDENTIAL_FIXTURE,
     ):
@@ -192,6 +194,20 @@ def docs_plan_checks():
                     f"{PREDICTION_OUTPUT_NATIVE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
                 )
 
+    if MODEL_ASSET_PROVENANCE_PLAN.exists():
+        provenance_plan = MODEL_ASSET_PROVENANCE_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "Status: Completed",
+            "inception5h.zip",
+            "public-domain basis",
+            "make check",
+            "xcodebuild not found; static project checks completed",
+        ):
+            if evidence not in provenance_plan:
+                errors.append(
+                    f"{MODEL_ASSET_PROVENANCE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
+                )
+
     if PREDICTION_RANGE_PLAN.exists():
         range_plan = PREDICTION_RANGE_PLAN.read_text(encoding="utf-8")
         for evidence in (
@@ -233,6 +249,10 @@ def docs_plan_checks():
             "inception5h.zip",
             "d13569f6a98159de37e92e9c8ec4dae8f674fbf475f69fe6199b514f756d4364",
             "The exact original TensorFlow commit is not recorded",
+            "Apache License 2.0",
+            "NH 96919-KN",
+            "public domain in the United States",
+            "app/data/PROVENANCE.md",
         ):
             if contract not in guide:
                 errors.append(f"toolchain and model guide must preserve: {contract}")
@@ -244,6 +264,21 @@ def docs_plan_checks():
         errors.append("README must name the CameraExample Xcode target")
     if "Document exact build tool versions and model download expectations" in read_text("VISION.md"):
         errors.append("VISION must not retain the completed toolchain documentation priority")
+    if "Clarify licensing/provenance for downloaded model assets" in read_text("VISION.md"):
+        errors.append("VISION must not retain the completed model provenance priority")
+
+    provenance = read_text("app/data/PROVENANCE.md")
+    for contract in (
+        "inception5h.zip",
+        "Apache License 2.0",
+        "Copyright 2015 The TensorFlow Authors",
+        "James S. Davis",
+        "NH 96919-KN",
+        "public domain in the United States",
+        "e1f57e98cf38076c0f9a058d74ffddf90f20453e436033784606b63c8ed2e49a",
+    ):
+        if contract not in provenance:
+            errors.append(f"model asset provenance must preserve: {contract}")
 
     return errors
 

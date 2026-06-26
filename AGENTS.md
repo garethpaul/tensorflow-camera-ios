@@ -59,6 +59,9 @@
 - A clean checkout does not include the generated TensorFlow/protobuf archives
   required for a full Xcode link; do not report the SDK-free gate as an iOS
   build or runtime test.
+- Preserve `app/data/PROVENANCE.md`: the Inception graph/labels are covered by
+  their bundled Apache-2.0 notice, while `grace_hopper.jpg` is a separately
+  sourced public-domain U.S. Navy work.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-08-tensorflow-camera-ios-baseline.md` for the canonical camera lifecycle baseline.
