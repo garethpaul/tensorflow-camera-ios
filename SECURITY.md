@@ -58,6 +58,8 @@ Helpful reports include:
   inclusive `[0, 1]` probability range before smoothing or presentation.
 - Model output dtype validation rejects incompatible prediction tensors before
   TensorFlow typed access or Objective-C publication.
+- No-camera label selection bounds scores by available labels and rejects
+  non-finite, out-of-range, and below-threshold values before UI publication.
 - The reviewed upstream credential fixture is the sole allowed key-shaped file.
   Project checks pin its TensorFlow testdata SHA-256 and fake service-account
   identity, and reject private-key PEM markers at every other repository path.

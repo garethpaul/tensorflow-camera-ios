@@ -23,6 +23,7 @@
 #include <limits.h>
 
 #include "frame_preprocessing.h"
+#include "prediction_output.h"
 #include "prediction_validation.h"
 #include "tensorflow_utils.h"
 
@@ -485,9 +486,11 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         const size_t result_count =
             prediction_count < label_count ? prediction_count : label_count;
 
-        NSMutableDictionary *newValues = [NSMutableDictionary dictionary];
+        std::vector<float> prediction_values;
+        prediction_values.reserve(result_count);
         for (size_t index = 0; index < result_count; index += 1) {
           const float predictionValue = predictions(index);
+          prediction_values.push_back(predictionValue);
           if (!std::isfinite(predictionValue)) {
             LOG(ERROR) << "Skipping non-finite model prediction";
             continue;
@@ -496,17 +499,22 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
             LOG(ERROR) << "Skipping out-of-range model prediction";
             continue;
           }
-          if (predictionValue > 0.05f) {
-            std::string label = labels[index];
-            NSString *labelObject =
-                [NSString stringWithUTF8String:label.c_str()];
-            if (!labelObject) {
-              LOG(ERROR) << "Skipping invalid UTF-8 model label";
-              continue;
-            }
-            NSNumber *valueObject = [NSNumber numberWithFloat:predictionValue];
-            [newValues setObject:valueObject forKey:labelObject];
+        }
+
+        const std::vector<tensorflow_camera::LabeledPrediction>
+            labeled_predictions = tensorflow_camera::SelectLabeledPredictions(
+                prediction_values, labels, 0.05f);
+        NSMutableDictionary *newValues = [NSMutableDictionary dictionary];
+        for (const tensorflow_camera::LabeledPrediction& prediction :
+             labeled_predictions) {
+          NSString *labelObject =
+              [NSString stringWithUTF8String:prediction.label.c_str()];
+          if (!labelObject) {
+            LOG(ERROR) << "Skipping invalid UTF-8 model label";
+            continue;
           }
+          NSNumber *valueObject = [NSNumber numberWithFloat:prediction.value];
+          [newValues setObject:valueObject forKey:labelObject];
         }
         dispatch_async(dispatch_get_main_queue(), ^(void) {
           [self setPredictionValues:newValues];

@@ -30,6 +30,7 @@ CREDENTIAL_FIXTURE_PLAN = DOCS_PLANS / "2026-06-15-upstream-credential-fixture-p
 PREDICTION_RANGE_PLAN = DOCS_PLANS / "2026-06-17-model-prediction-range-validation.md"
 FRAME_PREPROCESSING_NATIVE_PLAN = DOCS_PLANS / "2026-06-19-frame-preprocessing-native-contract.md"
 ACTIVE_SCREEN_LIFECYCLE_PLAN = DOCS_PLANS / "2026-06-25-active-screen-camera-lifecycle.md"
+PREDICTION_OUTPUT_NATIVE_PLAN = DOCS_PLANS / "2026-06-26-prediction-output-native-contract.md"
 TOOLCHAIN_MODEL_GUIDE = ROOT / "docs" / "toolchain-and-model-assets.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
@@ -67,14 +68,18 @@ def require_paths():
         "app/Info.plist",
         "app/CameraExampleViewController.mm",
         "app/frame_preprocessing.h",
+        "app/prediction_output.h",
         "app/prediction_validation.h",
         "app/CameraExampleAppDelegate.m",
         "tests/frame_preprocessing_test.cc",
+        "tests/prediction_output_test.cc",
         "tests/prediction_validation_test.cc",
         "scripts/run-frame-preprocessing-tests.sh",
         "scripts/run-ios-build.sh",
+        "scripts/run-prediction-output-tests.sh",
         "scripts/run-prediction-range-tests.sh",
         "scripts/test_frame_preprocessing_mutations.py",
+        "scripts/test_prediction_output_mutations.py",
         "app/data/tensorflow_inception_graph.pb",
         "app/data/imagenet_comp_graph_label_strings.txt",
         "app/data/grace_hopper.jpg",
@@ -127,6 +132,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-19-frame-preprocessing-native-contract.md is missing")
     if not ACTIVE_SCREEN_LIFECYCLE_PLAN.exists():
         errors.append("docs/plans/2026-06-25-active-screen-camera-lifecycle.md is missing")
+    if not PREDICTION_OUTPUT_NATIVE_PLAN.exists():
+        errors.append("docs/plans/2026-06-26-prediction-output-native-contract.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -168,6 +175,21 @@ def docs_plan_checks():
             if evidence not in fixture_plan:
                 errors.append(
                     f"{CREDENTIAL_FIXTURE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
+                )
+
+    if PREDICTION_OUTPUT_NATIVE_PLAN.exists():
+        output_plan = PREDICTION_OUTPUT_NATIVE_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "Status: Completed",
+            "Prediction output tests passed",
+            "prediction output mutation tests passed (5 mutations rejected)",
+            "Makefile root tests passed: 35 executed target/authority cases",
+            "xcodebuild not found; static project checks completed",
+            "make check",
+        ):
+            if evidence not in output_plan:
+                errors.append(
+                    f"{PREDICTION_OUTPUT_NATIVE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
                 )
 
     if PREDICTION_RANGE_PLAN.exists():
@@ -375,6 +397,10 @@ def project_checks():
         errors.append("Makefile contract-test must run the credential fixture policy tests")
     if 'CXX="$$CXX" "$$ROOT/scripts/run-prediction-range-tests.sh"' not in makefile:
         errors.append("Makefile test must execute the model prediction range tests")
+    if 'CXX="$$CXX" "$$ROOT/scripts/run-prediction-output-tests.sh"' not in makefile:
+        errors.append("Makefile test must execute the model prediction output tests")
+    if 'CXX="$$CXX" "$$PYTHON" "$$ROOT/scripts/test_prediction_output_mutations.py"' not in makefile:
+        errors.append("Makefile test must execute model prediction output mutations")
     if 'CXX="$$CXX" "$$ROOT/scripts/run-frame-preprocessing-tests.sh"' not in makefile:
         errors.append("Makefile test must execute frame preprocessing tests")
     if 'CXX="$$CXX" "$$PYTHON" "$$ROOT/scripts/test_frame_preprocessing_mutations.py"' not in makefile:
@@ -393,6 +419,8 @@ def project_checks():
         '"$$ROOT/scripts/check-ios-camera-source.py"',
         '"$$ROOT/scripts/test_workflow_contract.py"',
         '"$$ROOT/scripts/run-prediction-range-tests.sh"',
+        '"$$ROOT/scripts/run-prediction-output-tests.sh"',
+        '"$$ROOT/scripts/test_prediction_output_mutations.py"',
         '"$$ROOT/scripts/run-frame-preprocessing-tests.sh"',
         '"$$ROOT/scripts/test_frame_preprocessing_mutations.py"',
         '"$$ROOT/scripts/run-ios-build.sh"',
@@ -415,10 +443,18 @@ def project_checks():
         errors.append("README must index model prediction range validation evidence")
     if "docs/plans/2026-06-19-frame-preprocessing-native-contract.md" not in read_text("README.md"):
         errors.append("README must index frame preprocessing native evidence")
+    if "docs/plans/2026-06-26-prediction-output-native-contract.md" not in read_text("README.md"):
+        errors.append("README must index prediction output native evidence")
 
     runner = ROOT / "scripts" / "run-prediction-range-tests.sh"
     if runner.exists() and not runner.stat().st_mode & 0o111:
         errors.append("model prediction range test runner must be executable")
+    output_runner = ROOT / "scripts" / "run-prediction-output-tests.sh"
+    if output_runner.exists() and not output_runner.stat().st_mode & 0o111:
+        errors.append("model prediction output test runner must be executable")
+    root_test_source = read_text("scripts/test-makefile-root.sh")
+    if "run-prediction-output-tests.sh" not in root_test_source:
+        errors.append("Make-root isolation must stub the prediction output runner")
     frame_runner = ROOT / "scripts" / "run-frame-preprocessing-tests.sh"
     if frame_runner.exists() and not frame_runner.stat().st_mode & 0o111:
         errors.append("frame preprocessing test runner must be executable")
@@ -453,6 +489,10 @@ def behavior_checks():
     validation_source = read_text("app/prediction_validation.h")
     validation_test = read_text("tests/prediction_validation_test.cc")
     validation_runner = read_text("scripts/run-prediction-range-tests.sh")
+    output_source = read_text("app/prediction_output.h")
+    output_test = read_text("tests/prediction_output_test.cc")
+    output_runner = read_text("scripts/run-prediction-output-tests.sh")
+    output_mutations = read_text("scripts/test_prediction_output_mutations.py")
     frame_source = read_text("app/frame_preprocessing.h")
     frame_test = read_text("tests/frame_preprocessing_test.cc")
     frame_runner = read_text("scripts/run-frame-preprocessing-tests.sh")
@@ -715,7 +755,7 @@ def behavior_checks():
         errors.append("model output handling must bound iteration by labels and predictions")
     if "stringWithCString:label.c_str()" in source:
         errors.append("model labels must not use unchecked legacy C-string conversion")
-    if "stringWithUTF8String:label.c_str()" not in source:
+    if "stringWithUTF8String:prediction.label.c_str()" not in source:
         errors.append("model labels must use explicit UTF-8 conversion")
     if "if (!labelObject)" not in source:
         errors.append("model label rendering must reject failed string conversion")
@@ -735,10 +775,9 @@ def behavior_checks():
         errors.append("model output handling must reject non-finite prediction values")
     if "Skipping non-finite model prediction" not in source:
         errors.append("model output handling must log skipped non-finite predictions")
-    if "if (predictionValue > 0.05f)" not in source:
-        errors.append("model output handling must preserve the finite prediction display threshold")
     finite_guard = source.find("if (!std::isfinite(predictionValue))")
-    number_creation = source.find("[NSNumber numberWithFloat:predictionValue]")
+    selector_call = source.find("tensorflow_camera::SelectLabeledPredictions(")
+    number_creation = source.find("[NSNumber numberWithFloat:prediction.value]")
     if finite_guard < 0 or number_creation < 0 or finite_guard > number_creation:
         errors.append("model output handling must reject non-finite predictions before NSNumber creation")
     for fragment in (
@@ -766,6 +805,44 @@ def behavior_checks():
     ):
         if fragment not in validation_runner:
             errors.append(f"model prediction range test runner is missing: {fragment}")
+    for fragment in (
+        "struct LabeledPrediction",
+        "inline std::vector<LabeledPrediction> SelectLabeledPredictions(",
+        "const size_t result_count",
+        "!std::isfinite(value)",
+        "!IsValidModelPrediction(value)",
+        "value <= threshold",
+        "labels[index]",
+    ):
+        if fragment not in output_source:
+            errors.append(f"model prediction output helper is missing: {fragment}")
+    for fragment in (
+        'const std::vector<std::string> labels = {"cat", "dog", "bird"};',
+        "only scores above the threshold are selected",
+        "selection respects the shorter label vector",
+        "non-finite and out-of-range scores are excluded",
+        "non-finite thresholds fail closed",
+        "Prediction output tests passed",
+    ):
+        if fragment not in output_test:
+            errors.append(f"model prediction output executable test is missing: {fragment}")
+    for fragment in (
+        '"${CXX:-c++}" -std=c++11 -Wall -Wextra -Werror',
+        '"$ROOT/tests/prediction_output_test.cc"',
+        '"$TEMP_DIR/prediction_output_test"',
+        "trap 'rm -rf \"$TEMP_DIR\"' EXIT HUP INT TERM",
+    ):
+        if fragment not in output_runner:
+            errors.append(f"model prediction output test runner is missing: {fragment}")
+    for fragment in (
+        "inclusive threshold",
+        "label bound",
+        "prediction range",
+        "label association",
+        "finite threshold",
+    ):
+        if fragment not in output_mutations:
+            errors.append(f"model prediction output mutation is missing: {fragment}")
     range_call = "if (!tensorflow_camera::IsValidModelPrediction(predictionValue))"
     if '#include "prediction_validation.h"' not in source:
         errors.append("camera controller must include shared model prediction range validation")
@@ -773,13 +850,16 @@ def behavior_checks():
         errors.append("camera controller must reject out-of-range model predictions")
     if "Skipping out-of-range model prediction" not in source:
         errors.append("camera controller must log skipped out-of-range model predictions")
+    if '#include "prediction_output.h"' not in source:
+        errors.append("camera controller must include shared model prediction output selection")
+    if selector_call < 0:
+        errors.append("camera controller must use shared model prediction output selection")
     range_guard = source.find(range_call)
-    threshold = source.find("if (predictionValue > 0.05f)")
-    if min(finite_guard, range_guard, threshold, number_creation) < 0 or not (
-        finite_guard < range_guard < threshold < number_creation
+    if min(finite_guard, range_guard, selector_call, number_creation) < 0 or not (
+        finite_guard < range_guard < selector_call < number_creation
     ):
         errors.append(
-            "model prediction validation must order finite, unit-range, threshold, and collection checks"
+            "model prediction validation must precede shared selection and Objective-C publication"
         )
     if 'LOG(FATAL) << "Couldn\'t load model' in source:
         errors.append("model load failures must not crash with LOG(FATAL)")
