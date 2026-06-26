@@ -55,6 +55,9 @@
   `app/platform/cloud/testdata/service_account_credentials.json` with its
   pinned digest and fake identity; do not add or allow any other key-shaped
   fixture, application credential, token, or local secret.
+- Preserve `app/platform/cloud/testdata/PROVENANCE.md` without copying or
+  printing fixture key material; re-audit upstream only when the vendored cloud
+  OAuth code, accepted bytes, paths, or lineage changes.
 - This looks like an Apple platform project or sample. Xcode, Swift, CocoaPods, and deployment target versions may need to match the original project era.
 - A clean checkout does not include the generated TensorFlow/protobuf archives
   required for a full Xcode link; do not report the SDK-free gate as an iOS

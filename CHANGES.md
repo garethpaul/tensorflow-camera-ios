@@ -1,5 +1,58 @@
 # Changes
 
+## 2026-06-26 01:04 PDT - P2 - Re-audit credential fixture provenance
+
+### Summary
+
+Verified that the sole allowed key-shaped TensorFlow test fixture remains
+byte-identical across its introduction, v0.12.0, the reviewed snapshot, and the
+current upstream core and XLA paths.
+
+### Work completed
+
+- Added adjacent provenance without reproducing or printing key material.
+- Recorded the upstream introduction commit, stable release, reviewed snapshot,
+  current reviewed commit, legacy core path, and XLA mirror.
+- Added offline fail-closed lineage contracts and two hostile policy scenarios.
+- Closed the generic synchronization roadmap item with a concrete re-audit
+  trigger for future vendored-code, path, byte, or lineage changes.
+
+### Threads
+
+- None; upstream history and committed blobs were inspected directly.
+
+### Files changed
+
+- `app/platform/cloud/testdata/PROVENANCE.md` — immutable lineage and scope.
+- `scripts/check-ios-camera-source.py` and
+  `scripts/test_credential_fixture_policy.py` — offline contracts and mutations.
+- `README.md`, `SECURITY.md`, `VISION.md`, `AGENTS.md`, and
+  `docs/plans/2026-06-26-credential-fixture-upstream-audit.md` — synchronized
+  maintainer and verification evidence.
+- `CHANGES.md` — this cycle record.
+
+### Validation
+
+- RED project check — rejected the missing provenance record.
+- RED isolated policy suite — rejected the missing provenance fixture.
+- Upstream hash and fake-metadata comparison — no drift across all reviewed refs.
+- `make check` — passed, including seven credential hostile scenarios.
+- `git diff --check` — passed.
+- Xcode/OAuth/Bazel/network runtime — not exercised on this Linux host.
+
+### Bugs / findings
+
+- P2 documentation gap: the historical plan did not record the fixture's
+  introduction commit or current XLA mirror.
+
+### Blockers
+
+- None; online upstream access is intentionally not part of the local gate.
+
+### Next action
+
+- Modernize ML dependencies only in a dedicated compatibility pass.
+
 ## 2026-06-26 00:58 PDT - P2 - Clarify model asset provenance
 
 ### Summary

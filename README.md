@@ -130,7 +130,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   `app/platform/cloud/testdata/` is public TensorFlow testdata with fake service
   account identifiers and an exact pinned digest. It is not application
   configuration and is the only allowed key-shaped fixture; keep all real
-  secrets and any additional credential fixtures out of git.
+  secrets and any additional credential fixtures out of git. Its introduction,
+  TensorFlow v0.12.0 snapshot, reviewed commit, and current dual-path upstream
+  comparison are recorded in `app/platform/cloud/testdata/PROVENANCE.md`.
 
 ## Security and Privacy Notes
 
