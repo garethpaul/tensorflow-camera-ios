@@ -36,6 +36,12 @@ allowing stale queued predictions to change a frozen, hidden, or inactive UI.
 - `xcodebuild not found; static project checks completed`; no full iOS link,
   simulator, device, camera, or TensorFlow graph runtime claim is made.
 - `git diff --check` passed.
+- Exact implementation head `082dd2c5fa63cb4c4bb93e762b33cbc406a3c706`
+  passed the hosted contract job, Actions/C++/Python CodeQL analyses, and
+  aggregate CodeQL.
+- The required Codex review helper failed before analysis with OpenAI HTTP 401
+  on both WebSocket and HTTPS transports. Immutable manual review confirmed
+  identical local, remote, and PR heads and found no actionable defect.
 
 ## Residual Risk
 

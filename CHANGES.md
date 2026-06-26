@@ -45,6 +45,12 @@ application deactivation from publishing stale prediction UI state.
   upstream credential fixture and three known generic-key false positives; the
   repository's digest-pinned credential policy passed all seven hostile cases.
 - `git diff --check` passed.
+- Exact implementation head `082dd2c5fa63cb4c4bb93e762b33cbc406a3c706`
+  passed the hosted contract job, Actions/C++/Python CodeQL analyses, and the
+  aggregate CodeQL check.
+- The required Codex review helper failed before analysis with OpenAI HTTP 401
+  on WebSocket and HTTPS transports. Immutable manual review pinned local,
+  remote, and PR heads to the same SHA and found no actionable defect.
 
 ### Bugs / findings
 
