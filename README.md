@@ -60,7 +60,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   [toolchain and model asset guide](docs/toolchain-and-model-assets.md). It
   records the Xcode 8.2-era/iOS 9.2 project metadata, the reviewed TensorFlow
   v0.12.0 reconstruction baseline, required generated archives, model recovery
-  checksums, and the legacy search paths that must be rebound locally.
+  checksums, per-file licensing/provenance, and the legacy search paths that
+  must be rebound locally. `app/data/PROVENANCE.md` separates the Apache-2.0
+  model bundle from the public-domain U.S. Navy sample portrait.
 
 ## Testing and Verification
 
