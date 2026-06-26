@@ -30,11 +30,13 @@ CREDENTIAL_FIXTURE_PLAN = DOCS_PLANS / "2026-06-15-upstream-credential-fixture-p
 PREDICTION_RANGE_PLAN = DOCS_PLANS / "2026-06-17-model-prediction-range-validation.md"
 FRAME_PREPROCESSING_NATIVE_PLAN = DOCS_PLANS / "2026-06-19-frame-preprocessing-native-contract.md"
 ACTIVE_SCREEN_LIFECYCLE_PLAN = DOCS_PLANS / "2026-06-25-active-screen-camera-lifecycle.md"
+TOOLCHAIN_MODEL_GUIDE = ROOT / "docs" / "toolchain-and-model-assets.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
 RESOURCE_SHA256 = {
     "app/data/tensorflow_inception_graph.pb": "a39b08b826c9d5a5532ff424c03a3a11a202967544e389aca4b06c2bd8aef63f",
     "app/data/imagenet_comp_graph_label_strings.txt": "da2a31ecfe9f212ae8dd07379b11a74cb2d7a110eba12c5fc8c862a65b8e6606",
     "app/data/grace_hopper.jpg": "e1f57e98cf38076c0f9a058d74ffddf90f20453e436033784606b63c8ed2e49a",
+    "app/data/LICENSE": "f086f362c12f3a0295ba186c8caa1d2778beb6b9a7651c499791f202c2429c0d",
 }
 CREDENTIAL_FIXTURE = "app/platform/cloud/testdata/service_account_credentials.json"
 CREDENTIAL_FIXTURE_SHA256 = "c7d61aaf782924787e979bb3b64e8ccdce81b838d03c44f5dce746e3365ff2f9"
@@ -76,6 +78,8 @@ def require_paths():
         "app/data/tensorflow_inception_graph.pb",
         "app/data/imagenet_comp_graph_label_strings.txt",
         "app/data/grace_hopper.jpg",
+        "app/data/LICENSE",
+        "docs/toolchain-and-model-assets.md",
         CREDENTIAL_FIXTURE,
     ):
         if not (ROOT / relative_path).exists():
@@ -191,6 +195,33 @@ def docs_plan_checks():
             errors.append(f"{relative_path} must document the reviewed upstream credential fixture")
         if "model prediction range validation" not in document:
             errors.append(f"{relative_path} must document model prediction range validation")
+
+    if TOOLCHAIN_MODEL_GUIDE.exists():
+        guide = TOOLCHAIN_MODEL_GUIDE.read_text(encoding="utf-8")
+        for contract in (
+            "TensorFlow v0.12.0",
+            "TensorFlow 0.12.head",
+            "Xcode 7.3 or later",
+            "Xcode 8.2-era project metadata",
+            "iOS 9.2",
+            "build_all_ios.sh",
+            "libtensorflow-core.a",
+            "libprotobuf.a",
+            "libprotobuf-lite.a",
+            "inception5h.zip",
+            "d13569f6a98159de37e92e9c8ec4dae8f674fbf475f69fe6199b514f756d4364",
+            "The exact original TensorFlow commit is not recorded",
+        ):
+            if contract not in guide:
+                errors.append(f"toolchain and model guide must preserve: {contract}")
+
+    readme = read_text("README.md")
+    if "docs/toolchain-and-model-assets.md" not in readme:
+        errors.append("README must link the toolchain and model asset guide")
+    if "`CameraExample` target" not in readme:
+        errors.append("README must name the CameraExample Xcode target")
+    if "Document exact build tool versions and model download expectations" in read_text("VISION.md"):
+        errors.append("VISION must not retain the completed toolchain documentation priority")
 
     return errors
 

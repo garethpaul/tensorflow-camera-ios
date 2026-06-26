@@ -55,7 +55,12 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 ## Running or Using the Project
 
 - Open `app/tensorflow_camera.xcodeproj` in Xcode and run the
-  `tensorflow_camera` target on an iOS device or simulator with camera support.
+  `CameraExample` target on an iOS device or simulator with camera support.
+- Before attempting a full link, follow the
+  [toolchain and model asset guide](docs/toolchain-and-model-assets.md). It
+  records the Xcode 8.2-era/iOS 9.2 project metadata, the reviewed TensorFlow
+  v0.12.0 reconstruction baseline, required generated archives, model recovery
+  checksums, and the legacy search paths that must be rebound locally.
 
 ## Testing and Verification
 
