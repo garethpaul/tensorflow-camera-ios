@@ -45,12 +45,12 @@ Priority:
   protected against workflow policy regressions
 - Keep graph, label, and sample-image integrity deterministic
 - Keep the reviewed upstream credential fixture byte-pinned and reject every
-  additional private-key marker
+  additional private-key marker; re-audit only when its vendored code, path,
+  bytes, or authoritative TensorFlow lineage changes
 - Treat Bazel, TensorFlow, and Objective-C++ setup as legacy context
 
 Next priorities:
 
-- Keep vendored test credential provenance synchronized with TensorFlow upstream
 - Modernize ML dependencies only in a dedicated compatibility pass
 
 Contribution rules:

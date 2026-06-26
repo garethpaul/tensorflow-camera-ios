@@ -41,6 +41,7 @@ RESOURCE_SHA256 = {
     "app/data/LICENSE": "f086f362c12f3a0295ba186c8caa1d2778beb6b9a7651c499791f202c2429c0d",
 }
 CREDENTIAL_FIXTURE = "app/platform/cloud/testdata/service_account_credentials.json"
+CREDENTIAL_FIXTURE_PROVENANCE = "app/platform/cloud/testdata/PROVENANCE.md"
 CREDENTIAL_FIXTURE_SHA256 = "c7d61aaf782924787e979bb3b64e8ccdce81b838d03c44f5dce746e3365ff2f9"
 PRIVATE_KEY_PEM_LABELS = (
     "RSA PRIVATE KEY",
@@ -331,8 +332,29 @@ def file_contains_private_key_marker(path):
 def credential_fixture_checks():
     errors = []
     fixture_path = ROOT / CREDENTIAL_FIXTURE
+    provenance_path = ROOT / CREDENTIAL_FIXTURE_PROVENANCE
     if not fixture_path.is_file():
         return [f"reviewed upstream credential fixture is missing: {CREDENTIAL_FIXTURE}"]
+    if not provenance_path.is_file():
+        errors.append(
+            f"reviewed upstream credential fixture provenance is missing: {CREDENTIAL_FIXTURE_PROVENANCE}"
+        )
+    else:
+        provenance = provenance_path.read_text(encoding="utf-8")
+        for contract in (
+            "bb465cdc0ed9c3b9b4f031505ea2294375677807",
+            "TensorFlow v0.12.0",
+            "e444cffb938a99d664631aee2544e25314a9e39d",
+            "fba94bc288cbbee7b1a09dec1d61b1c307ca3b79",
+            "tensorflow/core/platform/cloud/testdata/service_account_credentials.json",
+            "third_party/xla/xla/tsl/platform/cloud/testdata/service_account_credentials.json",
+            CREDENTIAL_FIXTURE_SHA256,
+            "No byte or fake-metadata drift",
+        ):
+            if contract not in provenance:
+                errors.append(
+                    f"reviewed upstream credential fixture provenance must preserve: {contract}"
+                )
 
     actual_hash = hashlib.sha256(fixture_path.read_bytes()).hexdigest()
     if actual_hash != CREDENTIAL_FIXTURE_SHA256:

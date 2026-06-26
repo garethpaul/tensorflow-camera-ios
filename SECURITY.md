@@ -65,7 +65,8 @@ Helpful reports include:
   non-finite, out-of-range, and below-threshold values before UI publication.
 - The reviewed upstream credential fixture is the sole allowed key-shaped file.
   Project checks pin its TensorFlow testdata SHA-256 and fake service-account
-  identity, and reject private-key PEM markers at every other repository path.
+  identity, require its adjacent upstream lineage record, and reject private-key
+  PEM markers at every other repository path.
 
 ## Mobile Privacy Notes
 
@@ -79,6 +80,9 @@ The reviewed TensorFlow OAuth fixture is a narrow upstream-test compatibility
 exception, not permission to commit application credentials or additional test
 keys. Any change to its path, digest, or fake identity requires explicit
 upstream provenance review.
+The current audit found the same byte-identical fake fixture at TensorFlow's
+legacy core path and XLA mirror; `app/platform/cloud/testdata/PROVENANCE.md`
+records the immutable lineage without reproducing key material.
 
 ## Safe Research Guidelines
 
