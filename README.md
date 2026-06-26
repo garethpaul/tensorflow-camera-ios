@@ -74,7 +74,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   actions to fail closed when capture setup is unavailable. Capture runs only
   while the controller is visible, the application is active, and the user has
   requested live capture; lifecycle suspension preserves Freeze/Continue
-  intent.
+  intent. Model work already queued on the serial callback path rechecks those
+  same gates on the main thread, so stale queued predictions cannot update a
+  frozen, hidden, or inactive interface.
   Capture teardown checks require the session to stop, the sample delegate to
   detach, and already-enqueued callbacks to drain before queue release, then
   release the owned session. Queue identity avoids a synchronous
@@ -197,6 +199,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   host-native RGB, crop, byte-bound, arithmetic, and ownership contract.
 - See `docs/plans/2026-06-25-active-screen-camera-lifecycle.md` for the
   active-screen capture gate and preserved Freeze/Continue intent.
+- See `docs/plans/2026-06-26-stale-prediction-publication.md` for the
+  main-thread stale queued predictions publication guard.
 
 ## Contributing
 

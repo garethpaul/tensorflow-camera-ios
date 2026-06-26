@@ -1,5 +1,67 @@
 # Changes
 
+## 2026-06-26 11:30 PDT - P1 - Reject stale queued predictions
+
+### Summary
+
+Prevented inference callbacks that finish after Freeze, view disappearance, or
+application deactivation from publishing stale prediction UI state.
+
+### Work completed
+
+- Added a framework-independent three-gate prediction publication decision.
+- Rechecked capture intent, controller visibility, and application activity on
+  the main thread immediately before Objective-C prediction publication.
+- Added host-native tests for the open gate and each independently closed gate.
+- Expanded prediction output mutation testing from five to eight regressions.
+- Added fail-closed source, test, mutation, documentation, and plan contracts.
+
+### Threads
+
+- None; the checked-in serial callback and main-thread handoff exposed the
+  stale-publication window directly.
+
+### Files changed
+
+- `app/prediction_output.h` — shared publication gate.
+- `app/CameraExampleViewController.mm` — main-thread stale-result rejection.
+- `tests/prediction_output_test.cc` — lifecycle publication regressions.
+- `scripts/test_prediction_output_mutations.py` — three gate-removal mutations.
+- `scripts/check-ios-camera-source.py` — durable project/behavior contracts.
+- `README.md`, `SECURITY.md`, `VISION.md`, `AGENTS.md` — maintained guidance.
+- `docs/plans/2026-06-26-stale-prediction-publication.md` — completed evidence.
+- `CHANGES.md` — this cycle record.
+
+### Validation
+
+- RED `make test` rejected the missing shared gate and controller guard.
+- Prediction output tests passed.
+- Prediction output mutation tests passed with eight mutations rejected.
+- `make check` passed all portable project, behavior, workflow, credential,
+  native host, mutation, Make authority, and SDK-aware build gates.
+- The absolute Makefile check passed from an external working directory.
+- An isolated mutation removing the controller publication guard was rejected.
+- Gitleaks reported seven reviewed current/history findings across the allowed
+  upstream credential fixture and three known generic-key false positives; the
+  repository's digest-pinned credential policy passed all seven hostile cases.
+- `git diff --check` passed.
+
+### Bugs / findings
+
+- P1 lifecycle state: inference already executing on the serial camera callback
+  queue could dispatch a main-thread prediction update after the user froze
+  capture, navigated away, or the application resigned active.
+
+### Blockers
+
+- Full iOS linking and camera runtime validation still require reconstructed
+  TensorFlow/protobuf archives, Xcode, a simulator or device, and camera access.
+
+### Next action
+
+- Validate the exact pull-request head with hosted contracts and CodeQL, then
+  merge only if immutable review is clean.
+
 ## 2026-06-26 01:04 PDT - P2 - Re-audit credential fixture provenance
 
 ### Summary

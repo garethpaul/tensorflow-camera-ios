@@ -18,6 +18,15 @@ void Expect(bool condition, const char* description) {
 }  // namespace
 
 int main() {
+  Expect(tensorflow_camera::ShouldPublishPrediction(true, true, true),
+         "predictions publish only while capture is active and visible");
+  Expect(!tensorflow_camera::ShouldPublishPrediction(false, true, true),
+         "frozen capture rejects queued predictions");
+  Expect(!tensorflow_camera::ShouldPublishPrediction(true, false, true),
+         "hidden views reject queued predictions");
+  Expect(!tensorflow_camera::ShouldPublishPrediction(true, true, false),
+         "inactive applications reject queued predictions");
+
   const std::vector<std::string> labels = {"cat", "dog", "bird"};
   const std::vector<float> predictions = {
       0.9f,

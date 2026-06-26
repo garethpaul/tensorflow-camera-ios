@@ -9,6 +9,12 @@
 
 namespace tensorflow_camera {
 
+inline bool ShouldPublishPrediction(
+    bool capture_requested, bool view_is_visible,
+    bool application_is_active) {
+  return capture_requested && view_is_visible && application_is_active;
+}
+
 struct LabeledPrediction {
   std::string label;
   float value;
