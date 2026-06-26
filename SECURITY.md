@@ -51,6 +51,9 @@ Helpful reports include:
 - Camera capture is suspended whenever the controller is hidden or the
   application resigns active, without silently changing the user's explicit
   Freeze/Continue choice.
+- Stale queued predictions from callbacks that finish after Freeze, view
+  disappearance, or application deactivation are rejected on the main thread
+  before they can mutate Objective-C prediction UI state.
 - Camera preprocessing rejects impossible dimensions and undersized Core Video
   row strides before locking or reading frame memory.
 - Camera sampling coordinate arithmetic promotes resize-loop intermediates

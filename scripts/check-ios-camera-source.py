@@ -31,6 +31,7 @@ PREDICTION_RANGE_PLAN = DOCS_PLANS / "2026-06-17-model-prediction-range-validati
 FRAME_PREPROCESSING_NATIVE_PLAN = DOCS_PLANS / "2026-06-19-frame-preprocessing-native-contract.md"
 ACTIVE_SCREEN_LIFECYCLE_PLAN = DOCS_PLANS / "2026-06-25-active-screen-camera-lifecycle.md"
 PREDICTION_OUTPUT_NATIVE_PLAN = DOCS_PLANS / "2026-06-26-prediction-output-native-contract.md"
+STALE_PREDICTION_PUBLICATION_PLAN = DOCS_PLANS / "2026-06-26-stale-prediction-publication.md"
 MODEL_ASSET_PROVENANCE_PLAN = DOCS_PLANS / "2026-06-26-model-asset-provenance.md"
 TOOLCHAIN_MODEL_GUIDE = ROOT / "docs" / "toolchain-and-model-assets.md"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "check.yml"
@@ -137,6 +138,8 @@ def docs_plan_checks():
         errors.append("docs/plans/2026-06-25-active-screen-camera-lifecycle.md is missing")
     if not PREDICTION_OUTPUT_NATIVE_PLAN.exists():
         errors.append("docs/plans/2026-06-26-prediction-output-native-contract.md is missing")
+    if not STALE_PREDICTION_PUBLICATION_PLAN.exists():
+        errors.append("docs/plans/2026-06-26-stale-prediction-publication.md is missing")
 
     plans = sorted(DOCS_PLANS.glob("*.md")) if DOCS_PLANS.exists() else []
     if not plans:
@@ -209,6 +212,21 @@ def docs_plan_checks():
                     f"{MODEL_ASSET_PROVENANCE_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
                 )
 
+    if STALE_PREDICTION_PUBLICATION_PLAN.exists():
+        stale_plan = STALE_PREDICTION_PUBLICATION_PLAN.read_text(encoding="utf-8")
+        for evidence in (
+            "Status: Completed",
+            "Prediction output tests passed",
+            "prediction output mutation tests passed (8 mutations rejected)",
+            "external-directory `make check` passed",
+            "xcodebuild not found; static project checks completed",
+            "git diff --check",
+        ):
+            if evidence not in stale_plan:
+                errors.append(
+                    f"{STALE_PREDICTION_PUBLICATION_PLAN.relative_to(ROOT)} must record verification evidence: {evidence}"
+                )
+
     if PREDICTION_RANGE_PLAN.exists():
         range_plan = PREDICTION_RANGE_PLAN.read_text(encoding="utf-8")
         for evidence in (
@@ -234,6 +252,8 @@ def docs_plan_checks():
             errors.append(f"{relative_path} must document the reviewed upstream credential fixture")
         if "model prediction range validation" not in document:
             errors.append(f"{relative_path} must document model prediction range validation")
+        if "stale queued predictions" not in document:
+            errors.append(f"{relative_path} must document stale queued predictions")
 
     if TOOLCHAIN_MODEL_GUIDE.exists():
         guide = TOOLCHAIN_MODEL_GUIDE.read_text(encoding="utf-8")
@@ -863,6 +883,10 @@ def behavior_checks():
         if fragment not in validation_runner:
             errors.append(f"model prediction range test runner is missing: {fragment}")
     for fragment in (
+        "inline bool ShouldPublishPrediction(",
+        "bool capture_requested, bool view_is_visible,",
+        "bool application_is_active",
+        "return capture_requested && view_is_visible && application_is_active;",
         "struct LabeledPrediction",
         "inline std::vector<LabeledPrediction> SelectLabeledPredictions(",
         "const size_t result_count",
@@ -874,6 +898,10 @@ def behavior_checks():
         if fragment not in output_source:
             errors.append(f"model prediction output helper is missing: {fragment}")
     for fragment in (
+        "predictions publish only while capture is active and visible",
+        "frozen capture rejects queued predictions",
+        "hidden views reject queued predictions",
+        "inactive applications reject queued predictions",
         'const std::vector<std::string> labels = {"cat", "dog", "bird"};',
         "only scores above the threshold are selected",
         "selection respects the shorter label vector",
@@ -892,6 +920,9 @@ def behavior_checks():
         if fragment not in output_runner:
             errors.append(f"model prediction output test runner is missing: {fragment}")
     for fragment in (
+        "capture intent publication gate",
+        "visible view publication gate",
+        "active application publication gate",
         "inclusive threshold",
         "label bound",
         "prediction range",
@@ -909,6 +940,14 @@ def behavior_checks():
         errors.append("camera controller must log skipped out-of-range model predictions")
     if '#include "prediction_output.h"' not in source:
         errors.append("camera controller must include shared model prediction output selection")
+    publication_guard = source.find(
+        "if (!tensorflow_camera::ShouldPublishPrediction("
+    )
+    prediction_publication = source.find("[self setPredictionValues:newValues];")
+    if publication_guard < 0:
+        errors.append("camera controller must reject stale queued prediction publication")
+    elif prediction_publication < 0 or publication_guard > prediction_publication:
+        errors.append("camera controller must gate predictions before Objective-C publication")
     if selector_call < 0:
         errors.append("camera controller must use shared model prediction output selection")
     range_guard = source.find(range_call)

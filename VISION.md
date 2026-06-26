@@ -22,6 +22,8 @@ Priority:
 - Keep freeze/resume controls fail-closed when capture setup is unavailable
 - Run camera capture only for a visible controller in an active application,
   while preserving explicit Freeze/Continue intent across lifecycle changes
+- Reject stale queued predictions before UI publication whenever capture
+  intent, controller visibility, or application activity is no longer active
 - Keep front/back camera switching fail-closed when replacement inputs fail
 - Keep camera frame preprocessing faithful to source coordinates and row stride
 - Reject malformed pixel-buffer geometry before frame memory access

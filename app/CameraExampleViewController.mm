@@ -517,6 +517,10 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
           [newValues setObject:valueObject forKey:labelObject];
         }
         dispatch_async(dispatch_get_main_queue(), ^(void) {
+          if (!tensorflow_camera::ShouldPublishPrediction(
+                  captureRequested, viewIsVisible, applicationIsActive)) {
+            return;
+          }
           [self setPredictionValues:newValues];
         });
       }

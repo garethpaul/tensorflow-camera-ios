@@ -46,6 +46,18 @@ def rejected(description, old, new):
 
 
 mutations = {
+    "capture intent publication gate": (
+        "return capture_requested && view_is_visible && application_is_active;",
+        "return view_is_visible && application_is_active;",
+    ),
+    "visible view publication gate": (
+        "return capture_requested && view_is_visible && application_is_active;",
+        "return capture_requested && application_is_active;",
+    ),
+    "active application publication gate": (
+        "return capture_requested && view_is_visible && application_is_active;",
+        "return capture_requested && view_is_visible;",
+    ),
     "inclusive threshold": ("value <= threshold", "value < threshold"),
     "label bound": (
         "predictions.size() < labels.size() ? predictions.size() : labels.size()",

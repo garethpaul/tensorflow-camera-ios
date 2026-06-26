@@ -38,6 +38,9 @@
 - Preserve the three-part camera running-state gate: explicit user capture
   intent, visible controller state, and active application state. Lifecycle
   suspension must not rewrite the user's Freeze/Continue choice.
+- Preserve the matching main-thread prediction publication gate so stale queued
+  predictions cannot update UI after Freeze, view disappearance, or application
+  deactivation.
 - Keep hosted verification read-only and credential-free with immutable action
   pins; update the structural workflow mutations with any intentional policy
   change.
