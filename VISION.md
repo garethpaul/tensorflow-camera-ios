@@ -48,7 +48,6 @@ Priority:
 
 Next priorities:
 
-- Document exact build tool versions and model download expectations
 - Add a no-camera test path for image preprocessing and label output
 - Clarify licensing/provenance for downloaded model assets
 - Keep vendored test credential provenance synchronized with TensorFlow upstream

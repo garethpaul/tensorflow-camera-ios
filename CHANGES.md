@@ -1,5 +1,66 @@
 # Changes
 
+## 2026-06-25 23:36 PDT - P2 - Document legacy toolchain reconstruction
+
+### Summary
+
+Documented the evidence-backed TensorFlow/iOS reconstruction baseline and
+byte-pinned model recovery path without claiming an unknown original commit.
+
+### Work completed
+
+- Recorded TensorFlow `0.12.head`, Xcode 8.2-era, iOS 9.2, GNU++11, libc++, and
+  generated-archive expectations from checked-in metadata.
+- Verified the graph, labels, and license against official `inception5h.zip`
+  bytes and the sample image against the official v0.12.0 iOS camera example.
+- Documented the v0.12.0 `build_all_ios.sh` reconstruction path and required
+  local search-path rebinding.
+- Corrected the README's Xcode target from the nonexistent `tensorflow_camera`
+  target to `CameraExample`.
+- Extended resource integrity to the bundled license, added fail-closed
+  documentation contracts, and advanced the roadmap.
+
+### Threads
+
+- None; repository history and official TensorFlow v0.12.0 sources were
+  reviewed directly.
+
+### Files changed
+
+- `docs/toolchain-and-model-assets.md` — historical toolchain, archive, model,
+  checksum, and validation boundaries.
+- `README.md`, `VISION.md` — linked the guide and advanced the next priority.
+- `scripts/check-ios-camera-source.py` — guide and license integrity contracts.
+- `CHANGES.md` — this cycle record.
+
+### Validation
+
+- Red `make check` — rejected the missing guide and stale roadmap priority.
+- Official `inception5h.zip` and v0.12.0 camera image byte comparison — passed.
+- Eleven hostile documentation/resource mutations — rejected missing toolchain,
+  archive, uncertainty, README, target, roadmap, and license contracts.
+- `make check` — passed, including project/behavior contracts, 35 Make
+  authority cases, workflow and credential mutations, and native C++ tests.
+- `make -f /absolute/path/Makefile check` from outside the repository — passed.
+- `git diff --check` — passed.
+
+### Bugs / findings
+
+- P2 developer workflow: the repository named no reproducible TensorFlow tag,
+  omitted the generated archive commands, and retained machine-local Xcode
+  search paths without a rebinding warning.
+- P2 documentation: the README named `tensorflow_camera`, but the project and
+  verified build script use the `CameraExample` target.
+
+### Blockers
+
+- Historical Xcode and generated TensorFlow/protobuf archives are unavailable
+  locally; no full iOS link or camera runtime claim is made.
+
+### Next action
+
+- Add a no-camera test path for image preprocessing and label output.
+
 ## 2026-06-25 07:18:07 PDT
 
 - Limited camera capture to the intersection of explicit user intent, visible
