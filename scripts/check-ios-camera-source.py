@@ -549,6 +549,67 @@ def project_checks():
             errors.append(
                 f"Make-root isolation must {description} as a whole line exactly once"
             )
+    workflow_contract_source = read_text("scripts/test_workflow_contract.py")
+    for description in (
+        "contradictory credentials",
+        "relocated credentials",
+        "floating checkout",
+        "floating setup",
+        "extra action",
+        "write permission",
+        "missing push",
+        "missing pull request",
+        "missing manual dispatch",
+        "duplicate runner",
+        "unbounded job",
+        "continued failure",
+        "wrong Python",
+        "dependency installation",
+        "hosted Xcode",
+        "unqualified make",
+        "weakened gate",
+    ):
+        key = f'    "{description}": mutate('
+        if len(re.findall(rf"^{re.escape(key)}", workflow_contract_source, re.MULTILINE)) != 1:
+            errors.append(
+                f"workflow contract mutation must be a table entry, not prose, exactly "
+                f"once: {description}"
+            )
+    for line in (
+        "def mutate(description, target, replacement):",
+        "    mutated = BASELINE.replace(target, replacement, 1)",
+        '        raise AssertionError(f"{description} mutation did not alter the fixture")',
+        "def assert_invalid(description, workflow):",
+        "    if not validate(workflow):",
+        '        raise AssertionError(f"{description} mutation was accepted")',
+        "baseline_errors = validate(BASELINE)",
+        "for description, workflow in mutations.items():",
+        "    assert_invalid(description, workflow)",
+    ):
+        if len(re.findall(rf"^{re.escape(line)}$", workflow_contract_source, re.MULTILINE)) != 1:
+            errors.append(
+                f"workflow contract tests must validate each mutation as a whole line "
+                f"exactly once: {line.strip()}"
+            )
+    credential_policy_source = read_text("scripts/test_credential_fixture_policy.py")
+    for line, occurrences in (
+        ("def require_error(errors, expected):", 1),
+        ("    if not any(expected in error for error in errors):", 1),
+        ('        raise AssertionError("expected policy error %r, got %r" % (expected, errors))', 1),
+        ("    if policy.credential_fixture_checks():", 1),
+        ('        raise AssertionError("reviewed upstream fixture must pass the isolated policy")', 1),
+        ('    require_error(policy.credential_fixture_checks(), "fixture provenance is missing")', 1),
+        ('    require_error(policy.credential_fixture_checks(), "provenance must preserve")', 1),
+        ('    require_error(policy.credential_fixture_checks(), "fixture hash mismatch")', 1),
+        ('    require_error(policy.credential_fixture_checks(), "must retain fake project_id")', 1),
+        ('    require_error(policy.credential_fixture_checks(), "fixture is missing")', 1),
+        ("    require_error(policy.credential_fixture_checks(), str(extra_fixture.relative_to(root)))", 2),
+    ):
+        if len(re.findall(rf"^{re.escape(line)}$", credential_policy_source, re.MULTILINE)) != occurrences:
+            errors.append(
+                f"credential fixture policy tests must exercise the isolated policy as a "
+                f"whole line exactly {occurrences} time(s): {line.strip()}"
+            )
     frame_runner = ROOT / "scripts" / "run-frame-preprocessing-tests.sh"
     if frame_runner.exists() and not frame_runner.stat().st_mode & 0o111:
         errors.append("frame preprocessing test runner must be executable")
@@ -831,14 +892,15 @@ def behavior_checks():
     ):
         if fragment not in frame_runner:
             errors.append(f"frame preprocessing test runner is missing: {fragment}")
-    for fragment in (
+    frame_mutation_descriptions = (
         "BGRA red/blue swap",
         "ARGB alpha exposure",
         "landscape crop removal",
         "portrait crop removal",
         "backing-size check removal",
         "resize overflow check removal",
-    ):
+    )
+    for fragment in frame_mutation_descriptions:
         if fragment not in frame_mutations:
             errors.append(f"frame preprocessing mutation is missing: {fragment}")
     if "&outputs[0]" in source:
@@ -950,7 +1012,7 @@ def behavior_checks():
             errors.append(
                 f"{label} test runner must execute {execution} as a whole line exactly once"
             )
-    for fragment in (
+    output_mutation_descriptions = (
         "capture intent publication gate",
         "visible view publication gate",
         "active application publication gate",
@@ -959,13 +1021,21 @@ def behavior_checks():
         "prediction range",
         "label association",
         "finite threshold",
-    ):
+    )
+    for fragment in output_mutation_descriptions:
         if fragment not in output_mutations:
             errors.append(f"model prediction output mutation is missing: {fragment}")
-    for label, mutation_source in (
-        ("frame preprocessing", frame_mutations),
-        ("model prediction output", output_mutations),
+    for label, mutation_source, mutation_descriptions in (
+        ("frame preprocessing", frame_mutations, frame_mutation_descriptions),
+        ("model prediction output", output_mutations, output_mutation_descriptions),
     ):
+        for description in mutation_descriptions:
+            key = f'    "{description}": ('
+            if len(re.findall(rf"^{re.escape(key)}", mutation_source, re.MULTILINE)) != 1:
+                errors.append(
+                    f"{label} mutation must be a table entry, not prose, exactly once: "
+                    f"{description}"
+                )
         for line in (
             "def rejected(description, old, new):",
             "    mutated = HEADER.replace(old, new, 1)",

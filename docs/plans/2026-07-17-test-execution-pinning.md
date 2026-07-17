@@ -18,9 +18,17 @@ reduced to work it never performed while every pin stayed satisfied:
 - `test-makefile-root.sh` (5506 bytes, 35 authority cases) was pinned by a
   single string, `run-prediction-output-tests.sh`, which a comment satisfies.
 - The two mutation testers were pinned only by their mutation description
-  strings, which a list literal satisfies.
+  strings, which a list literal or a comment satisfies.
+- The two contract testers had no content pins at all, so each collapsed to a
+  `print` of its own success message.
 
 Nothing asserted any runner's success message, so all of the above were silent.
+
+Because the description strings were substring pins, pinning only the
+mutate/compile/run chain would still have left an empty-table bypass: the
+descriptions could sit in a comment while `mutations = {}` ran nothing and the
+tester printed "0 mutations rejected". The mutation and contract tables are
+therefore pinned as anchored table entries, which prose cannot satisfy.
 
 ## Work Completed
 
@@ -32,7 +40,10 @@ Nothing asserted any runner's success message, so all of the above were silent.
   execution/count assertion as whole lines.
 - Pinned the mutate/compile/run/assert chain of both mutation testers as whole
   lines, so each pinned mutation description must flow through a real compile
-  and run.
+  and run, and pinned each mutation description as an anchored table entry.
+- Pinned the workflow contract tester's mutate/validate/assert chain and its 17
+  mutation table entries, and the credential fixture policy tester's
+  `require_error` definition and its eight isolated-policy assertions.
 
 ## Verification
 
@@ -47,6 +58,10 @@ Nothing asserted any runner's success message, so all of the above were silent.
   message passed the pre-change gate with exit 0; it is now rejected.
 - Stubbing both mutation testers to a `print` passed the pre-change gate with
   exit 0; they are now rejected.
+- Stubbing both contract testers to a `print` passed the pre-change gate with
+  exit 0; they are now rejected.
+- The empty-table bypass described above passed an intermediate form of this
+  change with exit 0 and is rejected by the anchored table-entry pins.
 
 ## Trust Boundary
 
