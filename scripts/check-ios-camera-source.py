@@ -532,6 +532,23 @@ def project_checks():
     root_test_source = read_text("scripts/test-makefile-root.sh")
     if "run-prediction-output-tests.sh" not in root_test_source:
         errors.append("Make-root isolation must stub the prediction output runner")
+    for description, pattern in (
+        (
+            "define run_case with its containment and invocation assertions",
+            r'^run_case\(\)\{.*\[ ! -e "\$SHELL_LOG" \]; grep -Fq "\$CHECKOUT" "\$LOG"; \}$',
+        ),
+        (
+            "execute all 35 target/authority cases and assert the count",
+            r'^executed=0; for target in build check contract-test lint root-test test verify; '
+            r'do for mode in default command-root environment-root command-shell environment-shell; '
+            r'do run_case "\$target" "\$mode"; executed=\$\(\(executed\+1\)\); done; done; '
+            r'\[ "\$executed" -eq 35 \]$',
+        ),
+    ):
+        if len(re.findall(pattern, root_test_source, re.MULTILINE)) != 1:
+            errors.append(
+                f"Make-root isolation must {description} as a whole line exactly once"
+            )
     frame_runner = ROOT / "scripts" / "run-frame-preprocessing-tests.sh"
     if frame_runner.exists() and not frame_runner.stat().st_mode & 0o111:
         errors.append("frame preprocessing test runner must be executable")
@@ -551,6 +568,10 @@ def project_checks():
         ):
             if fragment not in ios_build:
                 errors.append(f"iOS build runner isolation is missing: {fragment}")
+        if len(re.findall(r'^"\$XCODEBUILD" \\$', ios_build, re.MULTILINE)) != 1:
+            errors.append(
+                'iOS build runner must invoke "$XCODEBUILD" as a whole line exactly once'
+            )
 
     return errors
 
@@ -919,6 +940,16 @@ def behavior_checks():
     ):
         if fragment not in output_runner:
             errors.append(f"model prediction output test runner is missing: {fragment}")
+    for label, runner_source, executable in (
+        ("frame preprocessing", frame_runner, "frame_preprocessing_test"),
+        ("model prediction range", validation_runner, "prediction_validation_test"),
+        ("model prediction output", output_runner, "prediction_output_test"),
+    ):
+        execution = f'"$TEMP_DIR/{executable}"'
+        if len(re.findall(rf"^{re.escape(execution)}$", runner_source, re.MULTILINE)) != 1:
+            errors.append(
+                f"{label} test runner must execute {execution} as a whole line exactly once"
+            )
     for fragment in (
         "capture intent publication gate",
         "visible view publication gate",
@@ -931,6 +962,26 @@ def behavior_checks():
     ):
         if fragment not in output_mutations:
             errors.append(f"model prediction output mutation is missing: {fragment}")
+    for label, mutation_source in (
+        ("frame preprocessing", frame_mutations),
+        ("model prediction output", output_mutations),
+    ):
+        for line in (
+            "def rejected(description, old, new):",
+            "    mutated = HEADER.replace(old, new, 1)",
+            '        raise AssertionError(f"mutation did not apply: {description}")',
+            "        run_result = subprocess.run(",
+            "            [str(executable)], capture_output=True, text=True",
+            "        if run_result.returncode == 0:",
+            '            raise AssertionError(f"mutation survived: {description}")',
+            "for description, (old, new) in mutations.items():",
+            "    rejected(description, old, new)",
+        ):
+            if len(re.findall(rf"^{re.escape(line)}$", mutation_source, re.MULTILINE)) != 1:
+                errors.append(
+                    f"{label} mutation tests must compile and run each mutation as a "
+                    f"whole line exactly once: {line.strip()}"
+                )
     range_call = "if (!tensorflow_camera::IsValidModelPrediction(predictionValue))"
     if '#include "prediction_validation.h"' not in source:
         errors.append("camera controller must include shared model prediction range validation")
