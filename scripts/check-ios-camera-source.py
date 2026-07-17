@@ -482,6 +482,8 @@ def project_checks():
         errors.append("Makefile test must execute frame preprocessing tests")
     if 'CXX="$$CXX" "$$PYTHON" "$$ROOT/scripts/test_frame_preprocessing_mutations.py"' not in makefile:
         errors.append("Makefile test must execute frame preprocessing mutations")
+    if 'CXX="$$CXX" "$$PYTHON" "$$ROOT/scripts/test_native_suite_execution.py"' not in makefile:
+        errors.append("Makefile test must execute the native suite execution tests")
     for fragment in (
         ".DEFAULT_GOAL := check",
         ".PHONY: __repository-make-authority build check contract-test lint root-test test verify",
@@ -500,6 +502,7 @@ def project_checks():
         '"$$ROOT/scripts/test_prediction_output_mutations.py"',
         '"$$ROOT/scripts/run-frame-preprocessing-tests.sh"',
         '"$$ROOT/scripts/test_frame_preprocessing_mutations.py"',
+        '"$$ROOT/scripts/test_native_suite_execution.py"',
         '"$$ROOT/scripts/run-ios-build.sh"',
         '"$$ROOT/scripts/test-makefile-root.sh"',
     ):
@@ -532,6 +535,51 @@ def project_checks():
     root_test_source = read_text("scripts/test-makefile-root.sh")
     if "run-prediction-output-tests.sh" not in root_test_source:
         errors.append("Make-root isolation must stub the prediction output runner")
+    # Text pins can only prove a recipe line exists; a Makefile comment satisfies
+    # them just as well as a recipe. These assertions require the Make-root
+    # harness to observe `make check` actually invoking every gate.
+    for gate in (
+        "scripts/check-ios-camera-source.py --mode project",
+        "scripts/check-ios-camera-source.py --mode behavior",
+        "scripts/test_workflow_contract.py",
+        "scripts/test_credential_fixture_policy.py",
+        "scripts/test_native_suite_execution.py",
+        "scripts/test_frame_preprocessing_mutations.py",
+        "scripts/test_prediction_output_mutations.py",
+        "scripts/run-frame-preprocessing-tests.sh",
+        "scripts/run-prediction-range-tests.sh",
+        "scripts/run-prediction-output-tests.sh",
+        "scripts/run-ios-build.sh",
+        "scripts/test-makefile-root.sh",
+    ):
+        if f"'{gate}'" not in root_test_source:
+            errors.append(
+                f"Make-root isolation must assert make check invokes {gate}"
+            )
+    if '[ "$gates" -eq 12 ]' not in root_test_source:
+        errors.append("Make-root isolation must assert the gate-invocation case count")
+    execution_runner = ROOT / "scripts" / "test_native_suite_execution.py"
+    if execution_runner.exists() and not execution_runner.stat().st_mode & 0o111:
+        errors.append("native suite execution tests must be executable")
+    execution_source = read_text("scripts/test_native_suite_execution.py")
+    # The value of this gate is that it observes runners executing and failing,
+    # so require both directions and the diagnostic assertion that distinguishes
+    # a caught defect from a compile error.
+    for fragment in (
+        "def check_executes(",
+        "def check_gates(",
+        "if marker not in output:",
+        "if status == 0:",
+        "if diagnostic not in output:",
+        '"FAIL: predictions above one are rejected"',
+        '"FAIL: BGRA input is published to TensorFlow as RGB"',
+        '"FAIL: only scores above the threshold are selected"',
+        'if executed != 6:',
+    ):
+        if fragment not in execution_source:
+            errors.append(
+                f"native suite execution tests must keep behavioural assertion: {fragment}"
+            )
     frame_runner = ROOT / "scripts" / "run-frame-preprocessing-tests.sh"
     if frame_runner.exists() and not frame_runner.stat().st_mode & 0o111:
         errors.append("frame preprocessing test runner must be executable")

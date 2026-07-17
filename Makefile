@@ -60,6 +60,7 @@ lint:
 
 test:
 	"$$PYTHON" "$$ROOT/scripts/check-ios-camera-source.py" --mode behavior
+	CXX="$$CXX" "$$PYTHON" "$$ROOT/scripts/test_native_suite_execution.py"
 	CXX="$$CXX" "$$ROOT/scripts/run-frame-preprocessing-tests.sh"
 	CXX="$$CXX" "$$PYTHON" "$$ROOT/scripts/test_frame_preprocessing_mutations.py"
 	CXX="$$CXX" "$$ROOT/scripts/run-prediction-range-tests.sh"
