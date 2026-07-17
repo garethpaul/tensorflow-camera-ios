@@ -201,6 +201,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   active-screen capture gate and preserved Freeze/Continue intent.
 - See `docs/plans/2026-06-26-stale-prediction-publication.md` for the
   main-thread stale queued predictions publication guard.
+- See `docs/plans/2026-07-17-test-execution-pinning.md` for whole-line pinning
+  of test runner and mutation tester execution.
 
 ## Contributing
 
